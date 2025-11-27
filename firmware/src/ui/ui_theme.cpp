@@ -36,7 +36,7 @@ void ui_theme_init(void)
   // Initialize title label style
   lv_style_init(&style_label_title);
   lv_style_set_text_color(&style_label_title, lv_color_hex(COLOR_TEXT_PRIMARY));
-  lv_style_set_text_font(&style_label_title, &lv_font_montserrat_20);
+  lv_style_set_text_font(&style_label_title, &lv_font_montserrat_16);
   
   // Initialize normal label style
   lv_style_init(&style_label_normal);

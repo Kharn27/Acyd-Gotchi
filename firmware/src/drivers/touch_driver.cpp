@@ -15,10 +15,11 @@
 // Try to include XPT2046 library; if not available, use mock
 // Determine MOCK_TOUCH (0 = real driver, 1 = mock) in a predictable way.
 // Priority:
-// 1) build flag  (preferred)
+// 1) build flag (preferred, -DMOCK_TOUCH=0 or -DMOCK_TOUCH=1)
 // 2) TOUCH_MOCK defined -> force mock
 // 3) auto-detect by checking for XPT2046_Touchscreen.h
 
+// If build_flags defines MOCK_TOUCH (e.g. -DMOCK_TOUCH=0/1), keep it.
 #ifndef MOCK_TOUCH
   #ifdef TOUCH_MOCK
     #define MOCK_TOUCH 1

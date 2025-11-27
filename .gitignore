@@ -1,0 +1,5 @@
+# PlatformIO
+firmware/.pio/
+
+# VSCode spécifiques projet
+firmware/.vscode/

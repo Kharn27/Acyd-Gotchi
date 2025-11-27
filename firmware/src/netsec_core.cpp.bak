@@ -1,0 +1,51 @@
+#include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+
+#include "netsec_api.h"
+#include "board_config.h"
+#include "tasks.h"
+
+// NETSEC Module - Stub implementation
+// This will be expanded with WiFi/BLE scanning and handshake capture.
+
+static QueueHandle_t local_result_queue = NULL;
+
+void netsec_init(QueueHandle_t result_queue) {
+    Serial.println("[NETSEC] Network security module initialized");
+    local_result_queue = result_queue;
+    // TODO(NETSEC): Initialize WiFi/BLE drivers, set up scan state machine
+}
+
+void netsec_start_wifi_scan(void) {
+    Serial.println("[NETSEC] WiFi scan requested");
+    // TODO(NETSEC): Start asynchronous WiFi scan, push results to queue
+}
+
+void netsec_stop_wifi_scan(void) {
+    Serial.println("[NETSEC] WiFi scan stopped");
+    // TODO(NETSEC): Stop WiFi scan if in progress
+}
+
+void netsec_start_ble_scan(void) {
+    Serial.println("[NETSEC] BLE scan requested");
+    // TODO(NETSEC): Start asynchronous BLE scan, push results to queue
+}
+
+void netsec_stop_ble_scan(void) {
+    Serial.println("[NETSEC] BLE scan stopped");
+    // TODO(NETSEC): Stop BLE scan if in progress
+}
+
+bool netsec_request_handshake_capture(const netsec_wifi_ap_t* target) {
+    if (!LAB_MODE_ENABLED) {
+        Serial.println("[NETSEC] Handshake capture rejected: lab mode disabled");
+        return false;
+    }
+    
+    Serial.print("[NETSEC] Handshake capture requested for SSID: ");
+    Serial.println(target->ssid);
+    
+    // TODO(NETSEC): Implement controlled handshake capture with detection/mitigation
+    return true;
+}

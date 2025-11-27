@@ -1,0 +1,48 @@
+#include "netsec_wifi.h"
+#include "netsec_api.h"
+#include <Arduino.h>
+
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#else
+#include <WiFi.h>
+#endif
+
+// Note: use the non-blocking scan API when available. fallback to async wrapper.
+
+void netsec_wifi_start_scan(void)
+{
+  Serial.println("[NETSEC:WIFI] Starting WiFi scan (async)");
+  // Start async scan (non-blocking)
+  #if defined(ARDUINO_ARCH_ESP32)
+    // ESP32 supports async scan with WiFi.scanNetworks(true, true)
+    WiFi.scanNetworks(true, true);
+  #else
+    // Fallback: start blocking scan in a detached task (left TODO)
+    WiFi.scanNetworks();
+  #endif
+}
+
+void netsec_wifi_stop_scan(void)
+{
+  Serial.println("[NETSEC:WIFI] Stop WiFi scan (not implemented)");
+  // ESP32 does not provide a direct stop for async scan; rely on scan completion
+}
+
+void netsec_wifi_post_ap(const char* ssid, int32_t rssi, uint8_t channel, const uint8_t* bssid)
+{
+  // Prepare result structure and post it to the global netsec result queue
+  extern QueueHandle_t netsec_result_queue;
+  if (!netsec_result_queue) return;
+
+  netsec_result_t res;
+  memset(&res, 0, sizeof(res));
+  res.type = NETSEC_RESULT_WIFI_AP;
+  strncpy(res.wifi.ssid, ssid, sizeof(res.wifi.ssid)-1);
+  res.wifi.rssi = rssi;
+  res.wifi.channel = channel;
+  if (bssid) memcpy(res.wifi.bssid, bssid, 6);
+
+  xQueueSend(netsec_result_queue, &res, 0);
+}
+

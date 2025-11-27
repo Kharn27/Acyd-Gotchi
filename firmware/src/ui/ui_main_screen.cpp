@@ -1,0 +1,228 @@
+/*
+ * PIXEL - Main Screen Implementation
+ * 
+ * Central pet display with decorative background, status bars,
+ * and top/bottom button bands.
+ */
+
+#include "ui_screens.h"
+#include "ui_theme.h"
+#include "ui_api.h"
+#include "lvgl.h"
+
+#include <stdio.h>
+
+// Screen references
+static lv_obj_t* g_main_screen = NULL;
+static lv_obj_t* g_active_screen = NULL;
+
+// Forward declarations
+static void on_wifi_btn_click(lv_event_t* e);
+static void on_ble_btn_click(lv_event_t* e);
+static void on_settings_btn_click(lv_event_t* e);
+static void on_ok_btn_click(lv_event_t* e);
+static void on_back_btn_click(lv_event_t* e);
+static void on_menu_btn_click(lv_event_t* e);
+
+lv_obj_t* ui_create_main_screen(void)
+{
+  // Create main screen container
+  lv_obj_t* scr = lv_obj_create(NULL);
+  lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BG_MAIN), 0);
+  lv_obj_set_size(scr, DISP_HOR_RES, DISP_VER_RES);
+  
+  // === TOP BUTTON BAND ===
+  lv_obj_t* band_top = lv_obj_create(scr);
+  lv_obj_set_size(band_top, DISP_HOR_RES, BAND_HEIGHT);
+  lv_obj_set_pos(band_top, 0, 0);
+  lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_SURFACE), 0);
+  lv_obj_set_style_border_width(band_top, 1);
+  lv_obj_set_style_border_color(band_top, lv_color_hex(COLOR_BORDER), 0);
+  lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
+  lv_obj_set_flex_flow(band_top, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(band_top, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  
+  // WiFi button
+  lv_obj_t* btn_wifi = lv_btn_create(band_top);
+  lv_obj_set_size(btn_wifi, 40, 30);
+  lv_obj_add_style(btn_wifi, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_event_cb(btn_wifi, on_wifi_btn_click, LV_EVENT_CLICKED, NULL);
+  
+  lv_obj_t* label_wifi = lv_label_create(btn_wifi);
+  lv_label_set_text(label_wifi, "WiFi");
+  lv_obj_center(label_wifi);
+  lv_obj_add_style(label_wifi, ui_get_style_label_normal(), 0);
+  
+  // BLE button
+  lv_obj_t* btn_ble = lv_btn_create(band_top);
+  lv_obj_set_size(btn_ble, 40, 30);
+  lv_obj_add_style(btn_ble, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_event_cb(btn_ble, on_ble_btn_click, LV_EVENT_CLICKED, NULL);
+  
+  lv_obj_t* label_ble = lv_label_create(btn_ble);
+  lv_label_set_text(label_ble, "BLE");
+  lv_obj_center(label_ble);
+  lv_obj_add_style(label_ble, ui_get_style_label_normal(), 0);
+  
+  // Settings button
+  lv_obj_t* btn_settings = lv_btn_create(band_top);
+  lv_obj_set_size(btn_settings, 40, 30);
+  lv_obj_add_style(btn_settings, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_event_cb(btn_settings, on_settings_btn_click, LV_EVENT_CLICKED, NULL);
+  
+  lv_obj_t* label_settings = lv_label_create(btn_settings);
+  lv_label_set_text(label_settings, "⚙");
+  lv_obj_center(label_settings);
+  lv_obj_add_style(label_settings, ui_get_style_label_normal(), 0);
+  
+  // === CENTRAL PET AREA ===
+  int pet_start_y = BAND_HEIGHT + PAD_LARGE;
+  int pet_start_x = (DISP_HOR_RES - MAIN_SCREEN_PET_SIZE) / 2;
+  
+  lv_obj_t* pet_container = lv_obj_create(scr);
+  lv_obj_set_size(pet_container, MAIN_SCREEN_PET_SIZE, MAIN_SCREEN_PET_SIZE);
+  lv_obj_set_pos(pet_container, pet_start_x, pet_start_y);
+  lv_obj_set_style_bg_color(pet_container, lv_color_hex(COLOR_BG_DARK), 0);
+  lv_obj_set_style_border_width(pet_container, 2);
+  lv_obj_set_style_border_color(pet_container, lv_color_hex(COLOR_PRIMARY), 0);
+  lv_obj_set_style_radius(pet_container, RADIUS_LARGE, 0);
+  
+  // Pet label (placeholder for sprite/image)
+  lv_obj_t* label_pet = lv_label_create(pet_container);
+  lv_label_set_text(label_pet, "🐛");
+  lv_obj_set_style_text_font(label_pet, &lv_font_montserrat_48, 0);
+  lv_obj_center(label_pet);
+  
+  // Status info bar (pet name, health, etc.)
+  int status_y = pet_start_y + MAIN_SCREEN_PET_SIZE + PAD_NORMAL;
+  
+  lv_obj_t* label_status = lv_label_create(scr);
+  lv_label_set_text(label_status, "Acyd | Health: 100% | Mood: 😊");
+  lv_obj_set_pos(label_status, PAD_NORMAL, status_y);
+  lv_obj_set_width(label_status, DISP_HOR_RES - 2 * PAD_NORMAL);
+  lv_label_set_long_mode(label_status, LV_LABEL_LONG_WRAP);
+  lv_obj_add_style(label_status, ui_get_style_label_normal(), 0);
+  
+  // === BOTTOM BUTTON BAND ===
+  int band_bottom_y = DISP_VER_RES - BAND_HEIGHT;
+  
+  lv_obj_t* band_bottom = lv_obj_create(scr);
+  lv_obj_set_size(band_bottom, DISP_HOR_RES, BAND_HEIGHT);
+  lv_obj_set_pos(band_bottom, 0, band_bottom_y);
+  lv_obj_set_style_bg_color(band_bottom, lv_color_hex(COLOR_SURFACE), 0);
+  lv_obj_set_style_border_width(band_bottom, 1);
+  lv_obj_set_style_border_color(band_bottom, lv_color_hex(COLOR_BORDER), 0);
+  lv_obj_set_style_pad_all(band_bottom, PAD_SMALL, 0);
+  lv_obj_set_flex_flow(band_bottom, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(band_bottom, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  
+  // OK button
+  lv_obj_t* btn_ok = lv_btn_create(band_bottom);
+  lv_obj_set_size(btn_ok, BUTTON_WIDTH, BUTTON_HEIGHT);
+  lv_obj_add_style(btn_ok, ui_get_style_btn_primary(), 0);
+  lv_obj_add_event_cb(btn_ok, on_ok_btn_click, LV_EVENT_CLICKED, NULL);
+  
+  lv_obj_t* label_ok = lv_label_create(btn_ok);
+  lv_label_set_text(label_ok, "OK");
+  lv_obj_center(label_ok);
+  
+  // Back button
+  lv_obj_t* btn_back = lv_btn_create(band_bottom);
+  lv_obj_set_size(btn_back, BUTTON_WIDTH, BUTTON_HEIGHT);
+  lv_obj_add_style(btn_back, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_event_cb(btn_back, on_back_btn_click, LV_EVENT_CLICKED, NULL);
+  
+  lv_obj_t* label_back = lv_label_create(btn_back);
+  lv_label_set_text(label_back, "Back");
+  lv_obj_center(label_back);
+  
+  // Menu button
+  lv_obj_t* btn_menu = lv_btn_create(band_bottom);
+  lv_obj_set_size(btn_menu, BUTTON_WIDTH, BUTTON_HEIGHT);
+  lv_obj_add_style(btn_menu, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_event_cb(btn_menu, on_menu_btn_click, LV_EVENT_CLICKED, NULL);
+  
+  lv_obj_t* label_menu = lv_label_create(btn_menu);
+  lv_label_set_text(label_menu, "Menu");
+  lv_obj_center(label_menu);
+  
+  g_main_screen = scr;
+  g_active_screen = scr;
+  
+  printf("PIXEL: Main screen created\n");
+  return scr;
+}
+
+// Button callbacks
+static void on_wifi_btn_click(lv_event_t* e)
+{
+  (void)e;
+  printf("PIXEL: WiFi button clicked\n");
+  
+  // Post UI event to queue (if available)
+  extern QueueHandle_t ui_event_queue;
+  if (ui_event_queue) {
+    ui_event_t event = UI_EVENT_BUTTON_WIFI;
+    xQueueSend(ui_event_queue, &event, 0);
+  }
+}
+
+static void on_ble_btn_click(lv_event_t* e)
+{
+  (void)e;
+  printf("PIXEL: BLE button clicked\n");
+  
+  extern QueueHandle_t ui_event_queue;
+  if (ui_event_queue) {
+    ui_event_t event = UI_EVENT_BUTTON_BLE;
+    xQueueSend(ui_event_queue, &event, 0);
+  }
+}
+
+static void on_settings_btn_click(lv_event_t* e)
+{
+  (void)e;
+  printf("PIXEL: Settings button clicked\n");
+}
+
+static void on_ok_btn_click(lv_event_t* e)
+{
+  (void)e;
+  printf("PIXEL: OK button clicked\n");
+}
+
+static void on_back_btn_click(lv_event_t* e)
+{
+  (void)e;
+  printf("PIXEL: Back button clicked\n");
+  
+  // Return to main screen
+  if (g_main_screen && g_active_screen != g_main_screen) {
+    ui_load_screen(g_main_screen);
+  }
+}
+
+static void on_menu_btn_click(lv_event_t* e)
+{
+  (void)e;
+  printf("PIXEL: Menu button clicked\n");
+}
+
+// Screen management
+void ui_load_screen(lv_obj_t* screen)
+{
+  if (screen == NULL) return;
+  
+  lv_disp_t* disp = lv_disp_get_default();
+  if (disp) {
+    lv_disp_load_scr(screen);
+    g_active_screen = screen;
+    printf("PIXEL: Screen loaded\n");
+  }
+}
+
+lv_obj_t* ui_get_active_screen(void)
+{
+  return g_active_screen;
+}
+

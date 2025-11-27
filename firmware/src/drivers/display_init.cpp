@@ -11,6 +11,7 @@
 
 #include "display_driver.h"
 #include "board_config.h"
+#include "touch_driver.h"
 #include "lvgl.h"
 
 #include <stdio.h>
@@ -114,7 +115,10 @@ void display_init(void)
   lv_indev_drv_init(&g_indev_drv);
   g_indev_drv.type = LV_INDEV_TYPE_POINTER;
   g_indev_drv.read_cb = display_touch_read_cb;
-  
+
+  // Initialize touch controller before registering input device
+  cyd_touch_init();
+
   g_indev = lv_indev_drv_register(&g_indev_drv);
   if (!g_indev) {
     printf("ERROR: Failed to register LVGL input device\n");
@@ -154,10 +158,13 @@ void display_touch_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
 {
   // Stub for touch read
   (void)indev_drv;
-  
-  data->state = LV_INDEV_STATE_REL;
-  data->point.x = 0;
-  data->point.y = 0;
+
+  uint16_t x = 0, y = 0;
+  bool pressed = cyd_touch_read(&x, &y);
+
+  data->state = pressed ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+  data->point.x = x;
+  data->point.y = y;
 }
 
 void display_deinit(void)
@@ -178,6 +185,8 @@ void display_deinit(void)
     vSemaphoreDelete(g_spi_mutex);
     g_spi_mutex = NULL;
   }
+
+  cyd_touch_deinit();
 }
 
 struct _lv_disp_t* display_get_disp(void)

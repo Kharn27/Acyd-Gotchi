@@ -3,10 +3,24 @@
 
 #pragma once
 
+// Pull TFT_eSPI user configuration when available to keep pinout aligned
+#if __has_include("User_Setup.h")
+#include "User_Setup.h"
+#endif
+
+// Display resolution (landscape). If TFT_eSPI provides dimensions, reuse them
+// to avoid divergence between LVGL and the display driver.
+#ifdef TFT_WIDTH
+#define DISPLAY_WIDTH  TFT_HEIGHT
+#define DISPLAY_HEIGHT TFT_WIDTH
+#else
 #define DISPLAY_WIDTH  320
 #define DISPLAY_HEIGHT 240
+#endif
 
+#ifndef TOUCH_CS_PIN
 #define TOUCH_CS_PIN   33
+#endif
 
 // Default to real TFT_eSPI unless explicitly mocking
 #ifndef MOCK_TFT_ESPI

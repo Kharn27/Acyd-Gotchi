@@ -3,11 +3,33 @@
 #define LV_CONF_H
 
 #include <stdint.h>
-#include "board_config.h"
 
-/* Display resolution */
-#define LV_HOR_RES_MAX DISP_HOR_RES
-#define LV_VER_RES_MAX DISP_VER_RES
+/* board config may or may not be available when LVGL core compiles */
+#if defined(__has_include)
+# if __has_include("board_config.h")
+#  include "board_config.h"
+# endif
+#else
+/* fallback: try include but suppress build-break if missing */
+# include "board_config.h"
+#endif
+
+/* Display resolution: prefer DISP_* if available, otherwise safe defaults */
+#ifndef LV_HOR_RES_MAX
+ #ifdef DISP_HOR_RES
+  #define LV_HOR_RES_MAX DISP_HOR_RES
+ #else
+  #define LV_HOR_RES_MAX 320
+ #endif
+#endif
+
+#ifndef LV_VER_RES_MAX
+ #ifdef DISP_VER_RES
+  #define LV_VER_RES_MAX DISP_VER_RES
+ #else
+  #define LV_VER_RES_MAX 240
+ #endif
+#endif
 
 /* Color settings */
 #define LV_COLOR_DEPTH 16

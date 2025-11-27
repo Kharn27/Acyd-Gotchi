@@ -41,9 +41,12 @@ static void archi_apply_theme(void)
 
 // LVGL tick timer callback (1 ms tick)
 static void lvgl_tick_timer_cb(void* arg) {
-  // Avec LV_TICK_CUSTOM = 1, on peut appeler directement le handler
-  // ici au lieu de lv_tick_inc().
-  lv_timer_handler();
+  (void)arg;
+  /* Only increment LVGL tick from timer context. Do NOT call
+   * lv_timer_handler() from the timer - that runs LVGL internals
+   * and may race with the UI task. The UI task will call
+   * lv_timer_handler() periodically. */
+  lv_tick_inc(1);
 }
 
 // LVGL tick setup via esp_timer
@@ -120,4 +123,3 @@ lv_indev_t* lvgl_port_get_indev_touch(void)
 // Weak functions: display_init must set these
 void __attribute__((weak)) display_init(void) {}
 void __attribute__((weak)) display_deinit(void) {}
-

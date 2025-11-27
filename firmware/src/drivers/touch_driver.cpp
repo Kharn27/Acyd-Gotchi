@@ -12,6 +12,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
+#include <SPI.h>
 #include <XPT2046_Touchscreen.h>
 
 
@@ -24,14 +25,14 @@ typedef struct {
 
 static touch_state_t g_touch_state = {0, 0, false};
 static SemaphoreHandle_t g_touch_mutex = NULL;
+static XPT2046_Touchscreen ts(TOUCH_CS);
 
-#if !MOCK_TOUCH
-  static XPT2046_Touchscreen ts(TOUCH_CS);
-#endif
+// Utility: map function (Arduino-style)
+static uint16_t map_value(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 
 void touch_init(void)
 {
-  printf("ARCHI: Touch init (MOCK=%d)\n", MOCK_TOUCH ? 1 : 0);
+  printf("ARCHI: Touch init (XPT2046)\n");
   
   // Create touch mutex
   if (!g_touch_mutex) {
@@ -42,30 +43,25 @@ void touch_init(void)
     }
   }
   
-#if !MOCK_TOUCH
   // Initialize XPT2046
   if (!ts.begin()) {
     printf("ERROR: XPT2046 touchscreen begin failed\n");
     return;
   }
   printf("ARCHI: XPT2046 touchscreen initialized\n");
-#else
-  printf("ARCHI: Running in MOCK touch mode\n");
-#endif
 }
 
 bool touch_read(uint16_t * x, uint16_t * y)
 {
   bool pressed = false;
   
-#if !MOCK_TOUCH
   if (ts.touched()) {
     TS_Point p = ts.getPoint();
-    
+
     // Convert raw touch coordinates to display coordinates
     // These values depend on your display rotation and calibration
-    uint16_t tx = map(p.x, TS_MINX, TS_MAXX, 0, DISP_HOR_RES);
-    uint16_t ty = map(p.y, TS_MINY, TS_MAXY, 0, DISP_VER_RES);
+    uint16_t tx = map_value(p.x, TS_MINX, TS_MAXX, 0, DISP_HOR_RES);
+    uint16_t ty = map_value(p.y, TS_MINY, TS_MAXY, 0, DISP_VER_RES);
     
     if (xSemaphoreTake(g_touch_mutex, pdMS_TO_TICKS(10))) {
       g_touch_state.x = tx;
@@ -80,13 +76,6 @@ bool touch_read(uint16_t * x, uint16_t * y)
       xSemaphoreGive(g_touch_mutex);
     }
   }
-#else
-  // Mock: always not pressed
-  if (xSemaphoreTake(g_touch_mutex, pdMS_TO_TICKS(10))) {
-    g_touch_state.pressed = false;
-    xSemaphoreGive(g_touch_mutex);
-  }
-#endif
   
   if (xSemaphoreTake(g_touch_mutex, pdMS_TO_TICKS(10))) {
     *x = g_touch_state.x;
@@ -109,7 +98,7 @@ void touch_deinit(void)
 }
 
 // Utility: map function (Arduino-style)
-static uint16_t map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max)
+static uint16_t map_value(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max)
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }

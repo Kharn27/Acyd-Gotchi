@@ -1,11 +1,12 @@
 #include "display_driver.h"
 #include "board_config.h"
+#include "touch_driver.h"
 #include <TFT_eSPI.h>
 #include <lvgl.h>
 #include <Arduino.h>
 
 // Forward declaration for touch_read from touch_driver.h
-extern bool touch_read(uint16_t * x, uint16_t * y);
+// Forward declaration removed; using cyd_touch_* API
 
 static TFT_eSPI tft = TFT_eSPI();
 
@@ -47,7 +48,7 @@ void display_touch_read(lv_indev_drv_t* indev_drv, lv_indev_data_t* data)
 {
     (void)indev_drv;
     uint16_t x=0, y=0;
-    bool pressed = touch_read(&x, &y);
+    bool pressed = cyd_touch_read(&x, &y);
     if (pressed) {
         data->point.x = x;
         data->point.y = y;
@@ -84,6 +85,8 @@ void display_init(void)
     // Register touch input
     static lv_indev_drv_t indev_drv;
     lv_indev_drv_init(&indev_drv);
+    // Ensure touch driver is initialized before registering input
+    cyd_touch_init();
     indev_drv.type = LV_INDEV_TYPE_POINTER;
     indev_drv.read_cb = display_touch_read;
     g_indev_touch = lv_indev_drv_register(&indev_drv);

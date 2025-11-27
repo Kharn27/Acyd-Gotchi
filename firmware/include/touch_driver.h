@@ -17,15 +17,15 @@ extern "C" {
 #endif
 
 // Initialize touch controller: configure SPI, calibration if needed
-void touch_init(void);
+void cyd_touch_init(void);
 
 // Read touch data (non-blocking)
 // Returns true if touch is pressed, false otherwise
 // x, y: output coordinates (in display pixel space)
-bool touch_read(uint16_t * x, uint16_t * y);
+bool cyd_touch_read(uint16_t * x, uint16_t * y);
 
 // Deinit touch controller
-void touch_deinit(void);
+void cyd_touch_deinit(void);
 
 #ifdef __cplusplus
 }

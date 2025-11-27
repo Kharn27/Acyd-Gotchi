@@ -30,7 +30,7 @@ static XPT2046_Touchscreen ts(TOUCH_CS);
 // Utility: map function (Arduino-style)
 static uint16_t map_value(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 
-void touch_init(void)
+void cyd_touch_init(void)
 {
   printf("ARCHI: Touch init (XPT2046)\n");
   
@@ -51,7 +51,7 @@ void touch_init(void)
   printf("ARCHI: XPT2046 touchscreen initialized\n");
 }
 
-bool touch_read(uint16_t * x, uint16_t * y)
+bool cyd_touch_read(uint16_t * x, uint16_t * y)
 {
   bool pressed = false;
   
@@ -87,7 +87,7 @@ bool touch_read(uint16_t * x, uint16_t * y)
   return pressed;
 }
 
-void touch_deinit(void)
+void cyd_touch_deinit(void)
 {
   printf("ARCHI: Touch deinit\n");
   

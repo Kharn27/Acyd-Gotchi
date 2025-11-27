@@ -19,8 +19,7 @@ static TFT_eSPI tft = TFT_eSPI();
 
 #define DRAW_BUF_LINES 10
 static lv_disp_draw_buf_t draw_buf;
-static lv_color_t* draw_buf_1 = NULL;
-static bool draw_buf_in_psram = false;
+static lv_color_t draw_buf_1[LV_HOR_RES_MAX * DRAW_BUF_LINES];
 static lv_disp_t* g_disp = NULL;
 static lv_indev_t* g_indev_touch = NULL;
 

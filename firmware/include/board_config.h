@@ -8,6 +8,11 @@
 
 #define TOUCH_CS_PIN   33
 
+// Default to real TFT_eSPI unless explicitly mocking
+#ifndef MOCK_TFT_ESPI
+  #define MOCK_TFT_ESPI 0
+#endif
+
 // Ne redéfinir TOUCH_CS que si la lib TFT_eSPI ne l'a pas déjà fait
 #ifndef TOUCH_CS
   #define TOUCH_CS TOUCH_CS_PIN

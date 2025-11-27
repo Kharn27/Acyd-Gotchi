@@ -29,14 +29,14 @@ lv_obj_t* ui_create_main_screen(void)
   // Create main screen container
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BG_MAIN), 0);
-  lv_obj_set_size(scr, DISP_HOR_RES, DISP_VER_RES);
+  lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
   
   // === TOP BUTTON BAND ===
   lv_obj_t* band_top = lv_obj_create(scr);
-  lv_obj_set_size(band_top, DISP_HOR_RES, BAND_HEIGHT);
+  lv_obj_set_size(band_top, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_top, 0, 0);
   lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_SURFACE), 0);
-  lv_obj_set_style_border_width(band_top, 1);
+  lv_obj_set_style_border_width(band_top, 1, 0);
   lv_obj_set_style_border_color(band_top, lv_color_hex(COLOR_BORDER), 0);
   lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_top, LV_FLEX_FLOW_ROW);
@@ -77,13 +77,13 @@ lv_obj_t* ui_create_main_screen(void)
   
   // === CENTRAL PET AREA ===
   int pet_start_y = BAND_HEIGHT + PAD_LARGE;
-  int pet_start_x = (DISP_HOR_RES - MAIN_SCREEN_PET_SIZE) / 2;
+  int pet_start_x = (LV_HOR_RES - MAIN_SCREEN_PET_SIZE) / 2;
   
   lv_obj_t* pet_container = lv_obj_create(scr);
   lv_obj_set_size(pet_container, MAIN_SCREEN_PET_SIZE, MAIN_SCREEN_PET_SIZE);
   lv_obj_set_pos(pet_container, pet_start_x, pet_start_y);
   lv_obj_set_style_bg_color(pet_container, lv_color_hex(COLOR_BG_DARK), 0);
-  lv_obj_set_style_border_width(pet_container, 2);
+  lv_obj_set_style_border_width(pet_container, 2, 0);
   lv_obj_set_style_border_color(pet_container, lv_color_hex(COLOR_PRIMARY), 0);
   lv_obj_set_style_radius(pet_container, RADIUS_LARGE, 0);
   
@@ -99,18 +99,18 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_t* label_status = lv_label_create(scr);
   lv_label_set_text(label_status, "Acyd | Health: 100% | Mood: 😊");
   lv_obj_set_pos(label_status, PAD_NORMAL, status_y);
-  lv_obj_set_width(label_status, DISP_HOR_RES - 2 * PAD_NORMAL);
+  lv_obj_set_width(label_status, LV_HOR_RES - 2 * PAD_NORMAL);
   lv_label_set_long_mode(label_status, LV_LABEL_LONG_WRAP);
   lv_obj_add_style(label_status, ui_get_style_label_normal(), 0);
   
   // === BOTTOM BUTTON BAND ===
-  int band_bottom_y = DISP_VER_RES - BAND_HEIGHT;
+  int band_bottom_y = LV_VER_RES - BAND_HEIGHT;
   
   lv_obj_t* band_bottom = lv_obj_create(scr);
-  lv_obj_set_size(band_bottom, DISP_HOR_RES, BAND_HEIGHT);
+  lv_obj_set_size(band_bottom, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_bottom, 0, band_bottom_y);
   lv_obj_set_style_bg_color(band_bottom, lv_color_hex(COLOR_SURFACE), 0);
-  lv_obj_set_style_border_width(band_bottom, 1);
+  lv_obj_set_style_border_width(band_bottom, 1, 0);
   lv_obj_set_style_border_color(band_bottom, lv_color_hex(COLOR_BORDER), 0);
   lv_obj_set_style_pad_all(band_bottom, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_bottom, LV_FLEX_FLOW_ROW);

@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <stdbool.h>
+#include "board_config.h"
 
 #ifdef __cplusplus
 extern "C" {

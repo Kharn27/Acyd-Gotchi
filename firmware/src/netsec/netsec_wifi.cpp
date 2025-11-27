@@ -8,20 +8,14 @@
 #include <WiFi.h>
 #endif
 
-// Forward declaration
-static void on_wifi_scan_done(system_event_id_t event, system_event_info_t info);
+// Forward declaration (ESP32 async scan callback)
+#if defined(ARDUINO_ARCH_ESP32)
+static void on_wifi_scan_done(WiFiEvent_t event, WiFiEventInfo_t info);
+
+#endif
 
 // Internal flag to avoid concurrent scans
 static volatile bool wifi_scan_in_progress = false;
-
-// ESP32: WiFi event handler for scan done
-#if defined(ARDUINO_ARCH_ESP32)
-static void WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
-  if (event == SYSTEM_EVENT_SCAN_DONE) {
-    on_wifi_scan_done(event, info);
-  }
-}
-#endif
 
 void netsec_wifi_start_scan(void)
 {
@@ -32,7 +26,7 @@ void netsec_wifi_start_scan(void)
   Serial.println("[NETSEC:WIFI] Starting WiFi scan (async)");
   wifi_scan_in_progress = true;
 #if defined(ARDUINO_ARCH_ESP32)
-  WiFi.onEvent(WiFiEvent);
+  WiFi.onEvent(on_wifi_scan_done, ARDUINO_EVENT_WIFI_SCAN_DONE);
   WiFi.scanNetworks(true, true);
 #else
   WiFi.scanNetworks();
@@ -63,7 +57,8 @@ void netsec_wifi_post_ap(const char* ssid, int32_t rssi, uint8_t channel, const 
 }
 
 // Callback: called when scan is done
-static void on_wifi_scan_done(system_event_id_t event, system_event_info_t info)
+#if defined(ARDUINO_ARCH_ESP32)
+static void on_wifi_scan_done(WiFiEvent_t event, WiFiEventInfo_t info)
 {
   Serial.println("[NETSEC:WIFI] Scan done, posting results");
   int n = WiFi.scanComplete();
@@ -78,10 +73,11 @@ static void on_wifi_scan_done(system_event_id_t event, system_event_info_t info)
   // Post scan done event
   extern QueueHandle_t netsec_result_queue;
   if (netsec_result_queue) {
-    netsec_result_t done_evt = {0};
+    netsec_result_t done_evt = { .type = NETSEC_RES_WIFI_SCAN_DONE };
     done_evt.type = NETSEC_RES_WIFI_SCAN_DONE;
     xQueueSend(netsec_result_queue, &done_evt, 0);
   }
   WiFi.scanDelete();
   wifi_scan_in_progress = false;
 }
+#endif

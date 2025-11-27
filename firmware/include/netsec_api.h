@@ -4,6 +4,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // NETSEC Module API
 // NETSEC is responsible for implementing these functions.
 
@@ -20,14 +24,15 @@ typedef struct {
     char name[32];              // Device name (null-terminated)
     int8_t rssi;                // RSSI signal strength
     uint8_t addr[6];            // BLE MAC address
+    uint8_t addr_len;           // Length of addr (<=6)
 } netsec_ble_device_t;
 
 /* NETSEC result types pushed to netsec_result_queue */
 typedef enum {
     NETSEC_RES_NONE = 0,
-    NETSEC_RES_WIFI_AP,        // WiFi AP found
+    NETSEC_RES_WIFI_AP,         // WiFi AP found
     NETSEC_RES_WIFI_SCAN_DONE,  // WiFi scan complete
-    NETSEC_RES_BLE_DEVICE,     // BLE device found
+    NETSEC_RES_BLE_DEVICE,      // BLE device found
     NETSEC_RES_BLE_SCAN_DONE,   // BLE scan complete
 } netsec_result_type_t;
 
@@ -75,17 +80,10 @@ void netsec_stop_ble_scan(void);
  * @return: true if capture started, false if lab mode disabled or error
  */
 bool netsec_request_handshake_capture(const netsec_wifi_ap_t* target);
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <freertos/queue.h>
 
 // Global NETSEC command queue (created in system_init.cpp)
-extern QueueHandle_t netsec_command_queue;
 
 // NETSEC task entrypoint
-void netsec_task(void* pvParameters);
 
 #ifdef __cplusplus
 }

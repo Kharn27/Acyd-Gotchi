@@ -43,11 +43,13 @@ void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uin
 
   netsec_result_t res;
   memset(&res, 0, sizeof(res));
-  res.type = NETSEC_RESULT_BLE_DEVICE;
-  strncpy(res.ble.name, name?name:"", sizeof(res.ble.name)-1);
-  res.ble.rssi = rssi;
-  res.ble.addr_len = addr_len > sizeof(res.ble.addr)? sizeof(res.ble.addr) : addr_len;
-  if (addr && res.ble.addr_len) memcpy(res.ble.addr, addr, res.ble.addr_len);
+  res.type = NETSEC_RES_BLE_DEVICE;
+  strncpy(res.data.ble_device.name, name ? name : "", sizeof(res.data.ble_device.name) - 1);
+  res.data.ble_device.rssi = rssi;
+  res.data.ble_device.addr_len = addr_len > sizeof(res.data.ble_device.addr) ? sizeof(res.data.ble_device.addr) : addr_len;
+  if (addr && res.data.ble_device.addr_len) {
+    memcpy(res.data.ble_device.addr, addr, res.data.ble_device.addr_len);
+  }
 
   xQueueSend(netsec_result_queue, &res, 0);
 }

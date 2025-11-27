@@ -35,12 +35,19 @@
 static lv_color_t* g_display_buf1 = NULL;
 static lv_color_t* g_display_buf2 = NULL;
 
+// LVGL draw buffer must persist after registration
+static lv_disp_draw_buf_t g_draw_buf;
+
 // SPI mutex for display/touch concurrency
 static SemaphoreHandle_t g_spi_mutex = NULL;
 
 // LVGL display driver
 static lv_disp_drv_t g_disp_drv;
 static lv_indev_drv_t g_indev_drv;
+
+// Registered LVGL handles
+static lv_disp_t* g_disp = NULL;
+static lv_indev_t* g_indev = NULL;
 
 // Forward declarations
 static void display_flush_cb(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p);
@@ -87,17 +94,16 @@ void display_init(void)
   printf("ARCHI: Display buffers allocated (%u bytes each)\n", DISPLAY_BUF_SIZE);
   
   // Initialize LVGL display driver
-  lv_disp_draw_buf_t draw_buf;
-  lv_disp_draw_buf_init(&draw_buf, g_display_buf1, g_display_buf2, DISP_HOR_RES * 40);
+  lv_disp_draw_buf_init(&g_draw_buf, g_display_buf1, g_display_buf2, DISP_HOR_RES * 40);
   
   lv_disp_drv_init(&g_disp_drv);
   g_disp_drv.hor_res = DISP_HOR_RES;
   g_disp_drv.ver_res = DISP_VER_RES;
   g_disp_drv.flush_cb = display_flush_cb;
-  g_disp_drv.draw_buf = &draw_buf;
-  
-  lv_disp_t* disp = lv_disp_drv_register(&g_disp_drv);
-  if (!disp) {
+  g_disp_drv.draw_buf = &g_draw_buf;
+
+  g_disp = lv_disp_drv_register(&g_disp_drv);
+  if (!g_disp) {
     printf("ERROR: Failed to register LVGL display driver\n");
     return;
   }
@@ -109,8 +115,8 @@ void display_init(void)
   g_indev_drv.type = LV_INDEV_TYPE_POINTER;
   g_indev_drv.read_cb = display_touch_read_cb;
   
-  lv_indev_t* indev = lv_indev_drv_register(&g_indev_drv);
-  if (!indev) {
+  g_indev = lv_indev_drv_register(&g_indev_drv);
+  if (!g_indev) {
     printf("ERROR: Failed to register LVGL input device\n");
     return;
   }
@@ -172,6 +178,16 @@ void display_deinit(void)
     vSemaphoreDelete(g_spi_mutex);
     g_spi_mutex = NULL;
   }
+}
+
+struct _lv_disp_t* display_get_disp(void)
+{
+  return g_disp;
+}
+
+struct _lv_indev_t* display_get_indev_touch(void)
+{
+  return g_indev;
 }
 
 // Callback stubs for LVGL

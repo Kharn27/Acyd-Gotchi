@@ -12,30 +12,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
-// Try to include XPT2046 library; if not available, use mock
-// Determine MOCK_TOUCH (0 = real driver, 1 = mock) in a predictable way.
-// Priority:
-// 1) build flag (preferred, -DMOCK_TOUCH=0 or -DMOCK_TOUCH=1)
-// 2) TOUCH_MOCK defined -> force mock
-// 3) auto-detect by checking for XPT2046_Touchscreen.h
-
-// If build_flags defines MOCK_TOUCH (e.g. -DMOCK_TOUCH=0/1), keep it.
-#ifndef MOCK_TOUCH
-  #ifdef TOUCH_MOCK
-    #define MOCK_TOUCH 1
-  #else
-    #if defined(__has_include)
-      #if __has_include(XPT2046_Touchscreen.h)
-        #include XPT2046_Touchscreen.h
-        #define MOCK_TOUCH 0
-      #else
-        #define MOCK_TOUCH 1
-      #endif
-    #else
-      #define MOCK_TOUCH 1
-    #endif
-  #endif
-#endif
+#include <XPT2046_Touchscreen.h>
 
 
 // Touch state machine
@@ -65,7 +42,7 @@ void touch_init(void)
     }
   }
   
-#ifndef MOCK_TOUCH
+#if !MOCK_TOUCH
   // Initialize XPT2046
   if (!ts.begin()) {
     printf("ERROR: XPT2046 touchscreen begin failed\n");
@@ -81,7 +58,7 @@ bool touch_read(uint16_t * x, uint16_t * y)
 {
   bool pressed = false;
   
-#ifndef MOCK_TOUCH
+#if !MOCK_TOUCH
   if (ts.touched()) {
     TS_Point p = ts.getPoint();
     

@@ -6,8 +6,8 @@
 
 // Display driver configuration
 #define USER_SETUP_ID 2432
-#define ST7789_DRIVER
-#define TFT_RGB_ORDER TFT_RGB
+#define ILI9341_DRIVER
+#define TFT_RGB_ORDER TFT_BGR
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 320
 #define CGRAM_OFFSET

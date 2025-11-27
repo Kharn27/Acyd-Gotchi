@@ -18,6 +18,14 @@
 #define DISPLAY_HEIGHT 240
 #endif
 
+#ifndef LV_HOR_RES_MAX
+#define LV_HOR_RES_MAX DISPLAY_WIDTH
+#endif
+
+#ifndef LV_VER_RES_MAX
+#define LV_VER_RES_MAX DISPLAY_HEIGHT
+#endif
+
 #ifndef TOUCH_CS_PIN
 #define TOUCH_CS_PIN   33
 #endif

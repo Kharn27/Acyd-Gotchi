@@ -27,7 +27,7 @@ static touch_state_t g_touch_state = {0, 0, false};
 static SemaphoreHandle_t g_touch_mutex = NULL;
 static XPT2046_Touchscreen ts(TOUCH_CS);
 
-// Utility: map function (Arduino-style)
+// Utility: map function (Arduino-style) with clamping
 static uint16_t map_value(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
 
 void cyd_touch_init(void)
@@ -60,8 +60,8 @@ bool cyd_touch_read(uint16_t * x, uint16_t * y)
 
     // Convert raw touch coordinates to display coordinates
     // These values depend on your display rotation and calibration
-    uint16_t tx = map_value(p.x, TS_MINX, TS_MAXX, 0, DISP_HOR_RES);
-    uint16_t ty = map_value(p.y, TS_MINY, TS_MAXY, 0, DISP_VER_RES);
+    uint16_t tx = map_value(p.x, TS_MINX, TS_MAXX, 0, DISP_HOR_RES - 1);
+    uint16_t ty = map_value(p.y, TS_MINY, TS_MAXY, 0, DISP_VER_RES - 1);
     
     if (xSemaphoreTake(g_touch_mutex, pdMS_TO_TICKS(10))) {
       g_touch_state.x = tx;
@@ -100,6 +100,8 @@ void cyd_touch_deinit(void)
 // Utility: map function (Arduino-style)
 static uint16_t map_value(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max)
 {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  if (x < in_min) x = in_min;
+  if (x > in_max) x = in_max;
+  return (uint16_t)((uint32_t)(x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
 }
 

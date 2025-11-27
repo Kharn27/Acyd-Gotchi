@@ -90,7 +90,7 @@ lv_obj_t* ui_create_main_screen(void)
   // Pet label (placeholder for sprite/image)
   lv_obj_t* label_pet = lv_label_create(pet_container);
   lv_label_set_text(label_pet, "PET");
-  lv_obj_set_style_text_font(label_pet, &lv_font_montserrat_48, 0);
+  lv_obj_set_style_text_font(label_pet, &lv_font_montserrat_16, 0);
   lv_obj_center(label_pet);
   
   // Status info bar (pet name, health, etc.)

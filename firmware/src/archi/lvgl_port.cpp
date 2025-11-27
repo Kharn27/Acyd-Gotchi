@@ -24,11 +24,29 @@ static lv_disp_t* g_disp = NULL;
 static lv_indev_t* g_indev_touch = NULL;
 static esp_timer_handle_t g_tick_timer = NULL;
 
+// Apply a consistent Acyd-Gotchi theme to avoid default pastels
+static void archi_apply_theme(void)
+{
+  lv_theme_t* th = lv_theme_default_init(
+      lv_disp_get_default(),
+      lv_palette_main(LV_PALETTE_BLUE),
+      lv_palette_main(LV_PALETTE_DEEP_PURPLE),
+      true,  // dark mode for synthwave look
+      LV_FONT_DEFAULT);
+
+  if (th) {
+    lv_disp_set_theme(lv_disp_get_default(), th);
+  }
+}
+
 // LVGL tick timer callback (1 ms tick)
 static void lvgl_tick_timer_cb(void* arg) {
-  // Avec LV_TICK_CUSTOM = 1, on peut appeler directement le handler
-  // ici au lieu de lv_tick_inc().
-  lv_timer_handler();
+  (void)arg;
+  /* Only increment LVGL tick from timer context. Do NOT call
+   * lv_timer_handler() from the timer - that runs LVGL internals
+   * and may race with the UI task. The UI task will call
+   * lv_timer_handler() periodically. */
+  lv_tick_inc(1);
 }
 
 // LVGL tick setup via esp_timer
@@ -69,6 +87,9 @@ void lvgl_port_init(void)
     printf("ERROR: LVGL port missing disp/indev handles (check display_init)\n");
   }
 
+  // Apply default theme after display registration
+  archi_apply_theme();
+
   printf("ARCHI: Setting up LVGL tick timer...\n");
   // Setup 1 ms tick via esp_timer
   lvgl_setup_tick();
@@ -102,4 +123,3 @@ lv_indev_t* lvgl_port_get_indev_touch(void)
 // Weak functions: display_init must set these
 void __attribute__((weak)) display_init(void) {}
 void __attribute__((weak)) display_deinit(void) {}
-

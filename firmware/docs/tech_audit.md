@@ -51,4 +51,10 @@
 4. Sécuriser les drivers : buffers LVGL persistants, callbacks touch calibrés, mutex commun SPI/touch, pointeurs renvoyés à `lvgl_port`.
 5. Ensuite seulement, ouvrir Step 2 (affichage réel) puis Step 3 (screens interactifs) et Step 4 (scans async lab-mode).
 
+### Note (ARCHI – validation affichage/touch CYD)
+- `User_Setup.h` force désormais l’ILI9341 en `TFT_BGR` pour éviter les teintes roses et refléter la dalle CYD (320x240 paysage).
+- `lv_conf.h` est ajouté au projet pour caler la résolution LVGL sur `320x240`, rester en RGB565 et définir une palette sombre bleu/violet par défaut.
+- Le flush LVGL (TFT_eSPI) envoie directement le buffer sans swap ; le mapping tactile XPT2046 est borné à `[0..319]/[0..239]` pour éliminer les warnings `X/Y is greater than res`.
+- Les emojis non supportés du main screen ont été remplacés par des symboles LVGL/ASCII afin de supprimer les warnings de glyphes manquants.
+
 Merci de confirmer ces axes avant d’assigner ARCHI/PIXEL/NETSEC ou d’ouvrir des PRs correctives.

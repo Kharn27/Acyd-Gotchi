@@ -10,13 +10,6 @@
 
 static TFT_eSPI tft = TFT_eSPI();
 
-#ifndef LV_HOR_RES_MAX
-#define LV_HOR_RES_MAX 320
-#endif
-#ifndef LV_VER_RES_MAX
-#define LV_VER_RES_MAX 240
-#endif
-
 #define DRAW_BUF_LINES 10
 static lv_disp_draw_buf_t draw_buf;
 static lv_color_t draw_buf_1[LV_HOR_RES_MAX * DRAW_BUF_LINES];
@@ -36,8 +29,7 @@ void display_flush(lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* color_
     // Push the pixels to the TFT
     tft.startWrite();
     tft.setAddrWindow(x1, y1, w, h);
-    // lv_color_t is typically 16-bit on Arduino builds
-    tft.pushColors((uint16_t*)color_p, w * h, true);
+    tft.pushPixels(reinterpret_cast<uint16_t*>(color_p), w * h);
     tft.endWrite();
 
     lv_disp_flush_ready(drv);
@@ -91,8 +83,6 @@ void display_init(void)
     indev_drv.read_cb = display_touch_read;
     g_indev_touch = lv_indev_drv_register(&indev_drv);
 
-    // Ensure byte swap matches LVGL color order
-    tft.setSwapBytes(true);
 }
 
 void display_deinit(void)

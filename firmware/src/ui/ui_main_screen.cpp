@@ -71,7 +71,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_add_event_cb(btn_settings, on_settings_btn_click, LV_EVENT_CLICKED, NULL);
   
   lv_obj_t* label_settings = lv_label_create(btn_settings);
-  lv_label_set_text(label_settings, "⚙");
+  lv_label_set_text(label_settings, LV_SYMBOL_SETTINGS);
   lv_obj_center(label_settings);
   lv_obj_add_style(label_settings, ui_get_style_label_normal(), 0);
   
@@ -89,15 +89,15 @@ lv_obj_t* ui_create_main_screen(void)
   
   // Pet label (placeholder for sprite/image)
   lv_obj_t* label_pet = lv_label_create(pet_container);
-  lv_label_set_text(label_pet, "🐛");
-  lv_obj_set_style_text_font(label_pet, &lv_font_montserrat_48, 0);
+  lv_label_set_text(label_pet, "PET");
+  lv_obj_set_style_text_font(label_pet, &lv_font_montserrat_16, 0);
   lv_obj_center(label_pet);
   
   // Status info bar (pet name, health, etc.)
   int status_y = pet_start_y + MAIN_SCREEN_PET_SIZE + PAD_NORMAL;
   
   lv_obj_t* label_status = lv_label_create(scr);
-  lv_label_set_text(label_status, "Acyd | Health: 100% | Mood: 😊");
+  lv_label_set_text(label_status, "Acyd | Health: 100% | Mood: :) ");
   lv_obj_set_pos(label_status, PAD_NORMAL, status_y);
   lv_obj_set_width(label_status, LV_HOR_RES - 2 * PAD_NORMAL);
   lv_label_set_long_mode(label_status, LV_LABEL_LONG_WRAP);

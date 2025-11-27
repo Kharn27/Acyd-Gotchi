@@ -2,7 +2,7 @@
  * ARCHI - UI Task Implementation
  * 
  * High-priority FreeRTOS task for LVGL rendering loop.
- * Calls lv_task_handler() periodically (~5-10 ms).
+ * Calls lv_timer_handler() periodically (~5-10 ms).
  * Runs on core 1 (higher priority for UI responsiveness).
  */
 
@@ -29,13 +29,13 @@ void ui_task(void * pvParameters)
   // Show main screen
   ui_show_main_screen();
   
-  // Task loop: call lv_task_handler() every ~5 ms
+  // Task loop: call lv_timer_handler() every ~5 ms
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(5);  // 5 ms period
   
   while (1) {
     // Process LVGL internal timers and redraw
-    lv_task_handler();
+    lv_timer_handler();
     
     // Handle UI events from queue (non-blocking)
     ui_event_t event;

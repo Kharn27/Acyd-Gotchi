@@ -7,9 +7,23 @@
 #define DISPLAY_WIDTH  320
 #define DISPLAY_HEIGHT 240
 
+// Unified resolution macros used across UI and drivers
+#define DISP_HOR_RES DISPLAY_WIDTH
+#define DISP_VER_RES DISPLAY_HEIGHT
+
 /* Touch (XPT2046) */
 #define TOUCH_CS_PIN   15
 #define TOUCH_IRQ_PIN  33
+
+// Legacy-compatible aliases used by drivers
+#define TOUCH_CS   TOUCH_CS_PIN
+#define TOUCH_IRQ  TOUCH_IRQ_PIN
+
+// Basic calibration bounds (can be refined after hardware validation)
+#define TS_MINX 200
+#define TS_MAXX 3800
+#define TS_MINY 200
+#define TS_MAXY 3800
 
 /* FreeRTOS task configuration */
 #define UI_TASK_STACK_SIZE    (8 * 1024)      // 8 KB for UI task

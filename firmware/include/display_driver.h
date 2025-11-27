@@ -11,6 +11,9 @@
 #include <cstdint>
 #include <cstddef>
 
+struct _lv_disp_t;
+struct _lv_indev_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,6 +32,10 @@ void display_touch_read(struct _lv_indev_drv_t * indev_drv, struct _lv_indev_dat
 
 // Deinit display: cleanup buffers, disable TFT_eSPI
 void display_deinit(void);
+
+// Accessors for registered LVGL handles
+struct _lv_disp_t* display_get_disp(void);
+struct _lv_indev_t* display_get_indev_touch(void);
 
 #ifdef __cplusplus
 }

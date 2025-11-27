@@ -6,6 +6,7 @@
 #include "netsec_core.h"
 #include "netsec_wifi.h"
 #include "netsec_ble.h"
+#include "board_config.h"
 
 static QueueHandle_t local_result_queue = NULL;
 

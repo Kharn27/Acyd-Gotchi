@@ -53,15 +53,23 @@ void lvgl_port_init(void)
 {
   // Initialize LVGL library
   lv_init();
-  
+
   printf("ARCHI: Initializing display driver...\n");
   // Initialize display (TFT_eSPI wrapper)
   display_init();
-  
+
+  // Cache registered handles for consumers
+  g_disp = display_get_disp();
+  g_indev_touch = display_get_indev_touch();
+
+  if (!g_disp || !g_indev_touch) {
+    printf("ERROR: LVGL port missing disp/indev handles (check display_init)\n");
+  }
+
   printf("ARCHI: Setting up LVGL tick timer...\n");
   // Setup 1 ms tick via esp_timer
   lvgl_setup_tick();
-  
+
   printf("ARCHI: LVGL port initialized\n");
 }
 

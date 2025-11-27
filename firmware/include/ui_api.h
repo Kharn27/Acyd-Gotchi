@@ -8,11 +8,12 @@
 
 /* UI event types posted by buttons to ui_event_queue */
 typedef enum {
-    UI_EV_NONE = 0,
-    UI_EV_WIFI_OPEN,        // Top-left button: open WiFi screen
-    UI_EV_BT_OPEN,          // Top-middle button: open Bluetooth screen
-    UI_EV_SELECT_ENTRY,     // User selected an entry (WiFi AP or BLE device)
-    UI_EV_BACK,             // Back button or escape
+    UI_EVENT_NONE = 0,
+    UI_EVENT_BUTTON_WIFI,    // Top bar WiFi button
+    UI_EVENT_BUTTON_BLE,     // Top bar BLE button
+    UI_EVENT_SELECT_ENTRY,   // Generic list selection
+    UI_EVENT_BACK,           // Back or escape navigation
+    UI_EVENT_UPDATE_PET,     // Periodic pet refresh
 } ui_event_t;
 
 /**

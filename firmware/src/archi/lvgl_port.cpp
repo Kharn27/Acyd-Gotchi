@@ -6,12 +6,15 @@
  * - Registers display and input drivers
  * - Sets up tick timer via esp_timer
  */
+extern "C" {
+  #include "lvgl.h"
+}
 
 #include "lvgl_port.h"
 #include "display_driver.h"
 #include "board_config.h"
 
-#include "lvgl.h"
+//#include "lvgl.h"
 #include "esp_timer.h"
 
 #include <stdio.h>
@@ -22,10 +25,10 @@ static lv_indev_t* g_indev_touch = NULL;
 static esp_timer_handle_t g_tick_timer = NULL;
 
 // LVGL tick timer callback (1 ms tick)
-static void lvgl_tick_timer_cb(void* arg)
-{
-  (void)arg;
-  lv_tick_inc(1);
+static void lvgl_tick_timer_cb(void* arg) {
+  // Avec LV_TICK_CUSTOM = 1, on peut appeler directement le handler
+  // ici au lieu de lv_tick_inc().
+  lv_timer_handler();
 }
 
 // LVGL tick setup via esp_timer

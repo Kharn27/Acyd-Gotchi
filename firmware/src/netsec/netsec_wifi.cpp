@@ -73,7 +73,7 @@ static void on_wifi_scan_done(WiFiEvent_t event, WiFiEventInfo_t info)
   // Post scan done event
   extern QueueHandle_t netsec_result_queue;
   if (netsec_result_queue) {
-    netsec_result_t done_evt = {0};
+    netsec_result_t done_evt = { .type = NETSEC_RES_WIFI_SCAN_DONE };
     done_evt.type = NETSEC_RES_WIFI_SCAN_DONE;
     xQueueSend(netsec_result_queue, &done_evt, 0);
   }

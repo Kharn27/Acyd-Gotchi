@@ -82,10 +82,8 @@ void netsec_stop_ble_scan(void);
 bool netsec_request_handshake_capture(const netsec_wifi_ap_t* target);
 
 // Global NETSEC command queue (created in system_init.cpp)
-extern QueueHandle_t netsec_command_queue;
 
 // NETSEC task entrypoint
-void netsec_task(void* pvParameters);
 
 #ifdef __cplusplus
 }

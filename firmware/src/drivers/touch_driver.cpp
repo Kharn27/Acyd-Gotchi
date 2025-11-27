@@ -13,21 +13,29 @@
 #include <freertos/semphr.h>
 
 // Try to include XPT2046 library; if not available, use mock
-#ifdef TOUCH_MOCK
-  #define MOCK_TOUCH 1
-#else
-  // Attempt to include XPT2046 library (may not be available)
-  #ifdef __has_include
-    #if __has_include("XPT2046_Touchscreen.h")
-      #include "XPT2046_Touchscreen.h"
-      #undef MOCK_TOUCH
+// Determine MOCK_TOUCH (0 = real driver, 1 = mock) in a predictable way.
+// Priority:
+// 1) build flag  (preferred)
+// 2) TOUCH_MOCK defined -> force mock
+// 3) auto-detect by checking for XPT2046_Touchscreen.h
+
+#ifndef MOCK_TOUCH
+  #ifdef TOUCH_MOCK
+    #define MOCK_TOUCH 1
+  #else
+    #if defined(__has_include)
+      #if __has_include(XPT2046_Touchscreen.h)
+        #include XPT2046_Touchscreen.h
+        #define MOCK_TOUCH 0
+      #else
+        #define MOCK_TOUCH 1
+      #endif
     #else
       #define MOCK_TOUCH 1
     #endif
-  #else
-    #define MOCK_TOUCH 1
   #endif
 #endif
+
 
 // Touch state machine
 typedef struct {
@@ -39,7 +47,7 @@ typedef struct {
 static touch_state_t g_touch_state = {0, 0, false};
 static SemaphoreHandle_t g_touch_mutex = NULL;
 
-#ifndef MOCK_TOUCH
+#if !MOCK_TOUCH
   static XPT2046_Touchscreen ts(TOUCH_CS);
 #endif
 

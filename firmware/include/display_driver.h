@@ -4,6 +4,11 @@
  * Wraps TFT_eSPI and provides LVGL flush callback.
  * Handles display buffer allocation, DMA support, and SPI mutex for concurrency.
  */
+#pragma once
+
+extern "C" {
+  #include "lvgl.h"
+}
 
 #ifndef DISPLAY_DRIVER_H
 #define DISPLAY_DRIVER_H

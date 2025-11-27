@@ -13,11 +13,6 @@
   #define TOUCH_CS TOUCH_CS_PIN
 #endif
 
-// Mode mock display (pas de vrai TFT) – par défaut désactivé
-#ifndef MOCK_TFT_ESPI
-  #define MOCK_TFT_ESPI 0
-#endif
-
 // Unified resolution macros used across UI and drivers
 #define DISP_HOR_RES DISPLAY_WIDTH
 #define DISP_VER_RES DISPLAY_HEIGHT
@@ -47,11 +42,3 @@
 
 /* Lab mode gate (security flag, defaults to false) */
 #define LAB_MODE_ENABLED  0
-
-#ifndef MOCK_TFT_ESPI
-  #define MOCK_TFT_ESPI 0
-#endif
-
-#ifndef MOCK_TOUCH
-  #define MOCK_TOUCH 0
-#endif

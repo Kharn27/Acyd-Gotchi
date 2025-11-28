@@ -13,8 +13,6 @@ extern "C" {
 #include "touch_driver.h"
 #include "board_config.h"
 
-#include "esp_timer.h"
-
 #include <stdio.h>
 
 static lv_disp_draw_buf_t s_draw_buf;
@@ -22,7 +20,6 @@ static lv_color_t s_draw_buf_1[LV_HOR_RES_MAX * 10];
 
 static lv_disp_t* g_disp = NULL;
 static lv_indev_t* g_indev_touch = NULL;
-static esp_timer_handle_t g_tick_timer = NULL;
 
 static void archi_apply_theme(void)
 {
@@ -69,30 +66,6 @@ static void my_touch_read(lv_indev_drv_t* indev_drv, lv_indev_data_t* data)
   }
 }
 
-static void lvgl_tick_timer_cb(void* arg)
-{
-  lv_timer_handler();
-}
-
-static void lvgl_setup_tick(void)
-{
-  esp_timer_create_args_t timer_args = {
-    .callback = lvgl_tick_timer_cb,
-    .arg = NULL,
-    .dispatch_method = ESP_TIMER_TASK,
-    .name = "lvgl_tick"
-  };
-
-  if (esp_timer_create(&timer_args, &g_tick_timer) != ESP_OK) {
-    printf("ERROR: Failed to create LVGL tick timer\n");
-    return;
-  }
-
-  if (esp_timer_start_periodic(g_tick_timer, 1000) != ESP_OK) {
-    printf("ERROR: Failed to start LVGL tick timer\n");
-  }
-}
-
 void lvgl_port_init(void)
 {
   lv_init();
@@ -121,19 +94,12 @@ void lvgl_port_init(void)
   g_indev_touch = lv_indev_drv_register(&indev_drv);
 
   archi_apply_theme();
-  lvgl_setup_tick();
 
   printf("ARCHI: LVGL port initialized\n");
 }
 
 void lvgl_port_deinit(void)
 {
-  if (g_tick_timer) {
-    esp_timer_stop(g_tick_timer);
-    esp_timer_delete(g_tick_timer);
-    g_tick_timer = NULL;
-  }
-
   display_hw_deinit();
   cyd_touch_deinit();
 

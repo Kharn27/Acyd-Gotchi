@@ -1,10 +1,8 @@
 /*
  * ARCHI - LVGL Port Implementation
- * 
- * Initializes LVGL on ESP32-CYD:
- * - Calls lv_init()
- * - Registers display and input drivers
- * - Sets up tick timer via esp_timer
+ *
+ * Initializes LVGL on ESP32-CYD by bridging hardware drivers (TFT, touch)
+ * with LVGL callbacks and registration.
  */
 extern "C" {
   #include "lvgl.h"
@@ -12,26 +10,27 @@ extern "C" {
 
 #include "lvgl_port.h"
 #include "display_driver.h"
+#include "touch_driver.h"
 #include "board_config.h"
 
-//#include "lvgl.h"
 #include "esp_timer.h"
 
 #include <stdio.h>
 
-// Static references for drivers
+static lv_disp_draw_buf_t s_draw_buf;
+static lv_color_t s_draw_buf_1[LV_HOR_RES_MAX * 10];
+
 static lv_disp_t* g_disp = NULL;
 static lv_indev_t* g_indev_touch = NULL;
 static esp_timer_handle_t g_tick_timer = NULL;
 
-// Apply a consistent Acyd-Gotchi theme to avoid default pastels
 static void archi_apply_theme(void)
 {
   lv_theme_t* th = lv_theme_default_init(
       lv_disp_get_default(),
       lv_palette_main(LV_PALETTE_BLUE),
       lv_palette_main(LV_PALETTE_DEEP_PURPLE),
-      true,  // dark mode for synthwave look
+      true,
       LV_FONT_DEFAULT);
 
   if (th) {
@@ -39,17 +38,43 @@ static void archi_apply_theme(void)
   }
 }
 
-// LVGL tick timer callback (1 ms tick)
-static void lvgl_tick_timer_cb(void* arg) {
+// LVGL flush callback bridging to hardware driver
+static void my_disp_flush(lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* color_p)
+{
+  (void)drv;
+  int32_t x1 = area->x1;
+  int32_t y1 = area->y1;
+  int32_t x2 = area->x2;
+  int32_t y2 = area->y2;
+  uint32_t w = (uint32_t)(x2 - x1 + 1);
+  uint32_t h = (uint32_t)(y2 - y1 + 1);
+
+  display_hw_push_pixels(x1, y1, w, h, reinterpret_cast<const uint16_t*>(color_p));
+  lv_disp_flush_ready(drv);
+}
+
+// Touch read callback using touch driver API
+static void my_touch_read(lv_indev_drv_t* indev_drv, lv_indev_data_t* data)
+{
+  (void)indev_drv;
+  uint16_t x = 0, y = 0;
+  bool pressed = cyd_touch_read(&x, &y);
+
+  if (pressed) {
+    data->point.x = x;
+    data->point.y = y;
+    data->state = LV_INDEV_STATE_PR;
+  } else {
+    data->state = LV_INDEV_STATE_REL;
+  }
+}
+
+static void lvgl_tick_timer_cb(void* arg)
+{
   (void)arg;
-  /* Only increment LVGL tick from timer context. Do NOT call
-   * lv_timer_handler() from the timer - that runs LVGL internals
-   * and may race with the UI task. The UI task will call
-   * lv_timer_handler() periodically. */
   lv_tick_inc(1);
 }
 
-// LVGL tick setup via esp_timer
 static void lvgl_setup_tick(void)
 {
   esp_timer_create_args_t timer_args = {
@@ -58,13 +83,12 @@ static void lvgl_setup_tick(void)
     .dispatch_method = ESP_TIMER_TASK,
     .name = "lvgl_tick"
   };
-  
+
   if (esp_timer_create(&timer_args, &g_tick_timer) != ESP_OK) {
     printf("ERROR: Failed to create LVGL tick timer\n");
     return;
   }
-  
-  // Start timer to fire every 1 ms
+
   if (esp_timer_start_periodic(g_tick_timer, 1000) != ESP_OK) {
     printf("ERROR: Failed to start LVGL tick timer\n");
   }
@@ -72,26 +96,32 @@ static void lvgl_setup_tick(void)
 
 void lvgl_port_init(void)
 {
-  // Initialize LVGL library
   lv_init();
 
-  printf("ARCHI: Initializing display driver...\n");
-  // Initialize display (TFT_eSPI wrapper)
-  display_init();
+  printf("ARCHI: Initializing display hardware...\n");
+  display_hw_init();
 
-  // Cache registered handles for consumers
-  g_disp = display_get_disp();
-  g_indev_touch = display_get_indev_touch();
+  lv_disp_draw_buf_init(&s_draw_buf, s_draw_buf_1, NULL, LV_HOR_RES_MAX * 10);
 
-  if (!g_disp || !g_indev_touch) {
-    printf("ERROR: LVGL port missing disp/indev handles (check display_init)\n");
-  }
+  static lv_disp_drv_t disp_drv;
+  lv_disp_drv_init(&disp_drv);
+  disp_drv.hor_res = LV_HOR_RES_MAX;
+  disp_drv.ver_res = LV_VER_RES_MAX;
+  disp_drv.flush_cb = my_disp_flush;
+  disp_drv.draw_buf = &s_draw_buf;
 
-  // Apply default theme after display registration
+  g_disp = lv_disp_drv_register(&disp_drv);
+
+  printf("ARCHI: Initializing touch hardware...\n");
+  cyd_touch_init();
+
+  static lv_indev_drv_t indev_drv;
+  lv_indev_drv_init(&indev_drv);
+  indev_drv.type = LV_INDEV_TYPE_POINTER;
+  indev_drv.read_cb = my_touch_read;
+  g_indev_touch = lv_indev_drv_register(&indev_drv);
+
   archi_apply_theme();
-
-  printf("ARCHI: Setting up LVGL tick timer...\n");
-  // Setup 1 ms tick via esp_timer
   lvgl_setup_tick();
 
   printf("ARCHI: LVGL port initialized\n");
@@ -104,9 +134,10 @@ void lvgl_port_deinit(void)
     esp_timer_delete(g_tick_timer);
     g_tick_timer = NULL;
   }
-  
-  display_deinit();
-  
+
+  display_hw_deinit();
+  cyd_touch_deinit();
+
   printf("ARCHI: LVGL port deinitialized\n");
 }
 
@@ -119,7 +150,3 @@ lv_indev_t* lvgl_port_get_indev_touch(void)
 {
   return g_indev_touch;
 }
-
-// Weak functions: display_init must set these
-void __attribute__((weak)) display_init(void) {}
-void __attribute__((weak)) display_deinit(void) {}

@@ -71,8 +71,7 @@ static void my_touch_read(lv_indev_drv_t* indev_drv, lv_indev_data_t* data)
 
 static void lvgl_tick_timer_cb(void* arg)
 {
-  (void)arg;
-  lv_tick_inc(1);
+  lv_timer_handler();
 }
 
 static void lvgl_setup_tick(void)

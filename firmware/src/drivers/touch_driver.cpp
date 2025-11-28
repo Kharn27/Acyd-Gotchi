@@ -1,8 +1,8 @@
 /*
  * ARCHI - Touch Driver Implementation (XPT2046 wrapper)
- * 
- * Non-blocking touch interface for LVGL.
- * Provides touch coordinate reading and conversion to display space.
+ *
+ * Pure hardware touch interface. Converts raw readings to display space
+ * and exposes non-blocking accessors to higher layers.
  */
 
 #include "touch_driver.h"

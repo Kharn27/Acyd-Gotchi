@@ -4,9 +4,9 @@
 #pragma once
 
 // Pull TFT_eSPI user configuration when available to keep pinout aligned
-#if __has_include("User_Setup.h")
-#include "User_Setup.h"
-#endif
+// #if __has_include("User_Setup.h")
+// #include "User_Setup.h"
+// #endif
 
 // Display resolution (landscape). If TFT_eSPI provides dimensions, reuse them
 // to avoid divergence between LVGL and the display driver.

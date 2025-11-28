@@ -1,60 +1,84 @@
-#if 1
 #ifndef LV_CONF_H
 #define LV_CONF_H
 
 #include <stdint.h>
 
-/* board config may or may not be available when LVGL core compiles */
-#if defined(__has_include)
-# if __has_include("board_config.h")
-#  include "board_config.h"
-# endif
-#else
-/* fallback: try include but suppress build-break if missing */
-# include "board_config.h"
-#endif
+/* ==========================================
+   ACTIVER LA CONFIGURATION
+   ========================================== */
+#define LV_CONF_SKIP 0  /* Doit être à 0 pour que ce fichier soit pris en compte */
 
-/* Display resolution: prefer DISP_* if available, otherwise safe defaults */
-#ifndef LV_HOR_RES_MAX
- #ifdef DISP_HOR_RES
-  #define LV_HOR_RES_MAX DISP_HOR_RES
- #else
-  #define LV_HOR_RES_MAX 320
- #endif
-#endif
-
-#ifndef LV_VER_RES_MAX
- #ifdef DISP_VER_RES
-  #define LV_VER_RES_MAX DISP_VER_RES
- #else
-  #define LV_VER_RES_MAX 240
- #endif
-#endif
-
-/* Color settings */
+/* ==========================================
+   AFFICHAGE ET COULEURS
+   ========================================== */
+/* Pour ESP32 CYD, on est en 16 bits (RGB565) */
 #define LV_COLOR_DEPTH 16
+
+/* SWAP DES BYTES : CRUCIAL POUR TFT_eSPI
+ * Si vos couleurs sont bizarres (glitchy), changez ceci de 1 à 0 ou inversement.
+ * Généralement 0 pour TFT_eSPI si on utilise tft.pushColors() correctement,
+ * mais 1 permet souvent d'optimiser le transfert SPI. */
 #define LV_COLOR_16_SWAP 0
 
-/* Theme defaults */
-#define LV_THEME_DEFAULT_DARK 1
-#define LV_THEME_DEFAULT_GROW 0
-#define LV_THEME_DEFAULT_PALETTE_PRIMARY LV_PALETTE_BLUE
-#define LV_THEME_DEFAULT_PALETTE_SECONDARY LV_PALETTE_DEEP_PURPLE
+/* ==========================================
+   MÉMOIRE
+   ========================================== */
+/* 0: Utiliser l'allocateur interne de LVGL (plus simple pour débuter)
+ * 1: Utiliser malloc/free de l'ESP32 */
+#define LV_MEM_CUSTOM 0
 
-/* Fonts */
+/* Taille du tas (heap) interne à LVGL en Kilooctets.
+ * 48Ko est confortable pour un ESP32 sans PSRAM. */
+#if LV_MEM_CUSTOM == 0
+    #define LV_MEM_SIZE (48U * 1024U)
+#endif
+
+/* ==========================================
+   TICK TIMER (IMPORTANT POUR ARDUINO)
+   ========================================== */
+/* Utilise la fonction millis() d'Arduino automatiquement pour gérer le temps.
+ * Plus besoin d'appeler lv_tick_inc() dans loop() */
+#define LV_TICK_CUSTOM 1
+#if LV_TICK_CUSTOM
+    #define LV_TICK_CUSTOM_INCLUDE "Arduino.h"
+    #define LV_TICK_CUSTOM_SYS_TIME_EXPR (millis())
+#endif
+
+/* ==========================================
+   WIDGETS ET THEMES
+   ========================================== */
+#define LV_USE_LABEL 1
+#define LV_USE_BTN 1
+#define LV_USE_ARC 1
+#define LV_USE_BAR 1
+#define LV_USE_SLIDER 1
+#define LV_USE_CHECKBOX 1
+#define LV_USE_SWITCH 1
+
+/* Thème par défaut */
+#define LV_THEME_DEFAULT_DARK 1
+#define LV_THEME_DEFAULT_GROW 1
+#define LV_THEME_DEFAULT_TRANSITION_TIME 80
+
+/* ==========================================
+   POLICES (FONTS)
+   ========================================== */
+/* Activez uniquement celles dont vous avez besoin pour économiser la mémoire Flash */
 #define LV_FONT_MONTSERRAT_12 1
 #define LV_FONT_MONTSERRAT_14 1
 #define LV_FONT_MONTSERRAT_16 1
 #define LV_FONT_DEFAULT &lv_font_montserrat_14
-#define LV_THEME_DEFAULT_FONT_SMALL &lv_font_montserrat_12
-#define LV_THEME_DEFAULT_FONT_NORMAL &lv_font_montserrat_14
-#define LV_THEME_DEFAULT_FONT_LARGE &lv_font_montserrat_16
 
-/* Logging */
+/* ==========================================
+   LOGGING (DEBUG)
+   ========================================== */
 #define LV_USE_LOG 1
-#define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
+#define LV_LOG_LEVEL LV_LOG_LEVEL_WARN /* Affiche seulement les erreurs/warnings */
 
-#include "lv_conf_internal.h"
+/* ==========================================
+   AUTRES
+   ========================================== */
+#define LV_USE_PERF_MONITOR 0
+#define LV_USE_MEM_MONITOR 0
 
 #endif /* LV_CONF_H */
-#endif /*End of "Content enable"*/

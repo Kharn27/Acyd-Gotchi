@@ -14,12 +14,103 @@ extern "C" {
 #include "board_config.h"
 
 #include <stdio.h>
+#include <string>
+#include <SPIFFS.h>
 
 static lv_disp_draw_buf_t s_draw_buf;
 static lv_color_t s_draw_buf_1[LV_HOR_RES_MAX * 10];
 
 static lv_disp_t* g_disp = NULL;
 static lv_indev_t* g_indev_touch = NULL;
+
+static void* fs_open(lv_fs_drv_t* drv, const char* path, lv_fs_mode_t mode)
+{
+  (void)drv;
+
+  std::string full_path = path ? path : "";
+  if (!full_path.empty() && full_path[0] != '/') {
+    full_path = "/" + full_path;
+  }
+
+  const char* open_mode = (mode & LV_FS_MODE_WR) ? "w" : "r";
+
+  File file = SPIFFS.open(full_path.c_str(), open_mode);
+  if (!file) {
+    return NULL;
+  }
+
+  return new File(file);
+}
+
+static lv_fs_res_t fs_close(lv_fs_drv_t* drv, void* file_p)
+{
+  (void)drv;
+
+  File* file = static_cast<File*>(file_p);
+  if (!file) {
+    return LV_FS_RES_UNKNOWN;
+  }
+
+  file->close();
+  delete file;
+  return LV_FS_RES_OK;
+}
+
+static lv_fs_res_t fs_read(lv_fs_drv_t* drv, void* file_p, void* buf, uint32_t btr, uint32_t* br)
+{
+  (void)drv;
+
+  File* file = static_cast<File*>(file_p);
+  if (!file) {
+    return LV_FS_RES_UNKNOWN;
+  }
+
+  size_t read_len = file->read(static_cast<uint8_t*>(buf), btr);
+  if (br) {
+    *br = static_cast<uint32_t>(read_len);
+  }
+
+  return LV_FS_RES_OK;
+}
+
+static lv_fs_res_t fs_seek(lv_fs_drv_t* drv, void* file_p, uint32_t pos, lv_fs_whence_t whence)
+{
+  (void)drv;
+
+  File* file = static_cast<File*>(file_p);
+  if (!file) {
+    return LV_FS_RES_UNKNOWN;
+  }
+
+  SeekMode seek_mode = SeekSet;
+  switch (whence) {
+    case LV_FS_SEEK_CUR:
+      seek_mode = SeekCur;
+      break;
+    case LV_FS_SEEK_END:
+      seek_mode = SeekEnd;
+      break;
+    case LV_FS_SEEK_SET:
+    default:
+      seek_mode = SeekSet;
+      break;
+  }
+
+  return file->seek(pos, seek_mode) ? LV_FS_RES_OK : LV_FS_RES_UNKNOWN;
+}
+
+static lv_fs_res_t fs_tell(lv_fs_drv_t* drv, void* file_p, uint32_t* pos_p)
+{
+  (void)drv;
+
+  File* file = static_cast<File*>(file_p);
+  if (!file || !pos_p) {
+    return LV_FS_RES_UNKNOWN;
+  }
+
+  *pos_p = static_cast<uint32_t>(file->position());
+  return LV_FS_RES_OK;
+}
 
 static void archi_apply_theme(void)
 {
@@ -69,6 +160,18 @@ static void my_touch_read(lv_indev_drv_t* indev_drv, lv_indev_data_t* data)
 void lvgl_port_init(void)
 {
   lv_init();
+
+  SPIFFS.begin(true);
+
+  static lv_fs_drv_t fs_drv;
+  lv_fs_drv_init(&fs_drv);
+  fs_drv.letter = 'S';
+  fs_drv.open_cb = fs_open;
+  fs_drv.close_cb = fs_close;
+  fs_drv.read_cb = fs_read;
+  fs_drv.seek_cb = fs_seek;
+  fs_drv.tell_cb = fs_tell;
+  lv_fs_drv_register(&fs_drv);
 
   printf("ARCHI: Initializing display hardware...\n");
   display_hw_init();

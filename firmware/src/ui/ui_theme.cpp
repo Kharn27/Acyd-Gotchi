@@ -22,7 +22,7 @@ void ui_theme_init(void)
                                              lv_palette_main(LV_PALETTE_GREEN),
                                              lv_palette_main(LV_PALETTE_GREEN),
                                              true, /* dark mode */
-                                             &lv_font_montserrat_14);
+                                             &lv_font_unscii_16);
     lv_disp_set_theme(disp, theme);
   }
 
@@ -51,12 +51,12 @@ void ui_theme_init(void)
   // Initialize title label style
   lv_style_init(&style_label_title);
   lv_style_set_text_color(&style_label_title, lv_color_hex(COLOR_TEXT_PRIMARY));
-  lv_style_set_text_font(&style_label_title, &lv_font_montserrat_16);
-  
+  lv_style_set_text_font(&style_label_title, &lv_font_unscii_16);
+
   // Initialize normal label style
   lv_style_init(&style_label_normal);
   lv_style_set_text_color(&style_label_normal, lv_color_hex(COLOR_TEXT_SECONDARY));
-  lv_style_set_text_font(&style_label_normal, &lv_font_montserrat_14);
+  lv_style_set_text_font(&style_label_normal, &lv_font_unscii_16);
 }
 
 lv_style_t* ui_get_style_btn_primary(void)

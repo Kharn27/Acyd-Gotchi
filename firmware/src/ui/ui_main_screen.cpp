@@ -10,19 +10,21 @@
 #include "ui_api.h"
 #include "lvgl.h"
 
+#include <Arduino.h>
 #include <stdio.h>
 
 // Screen references
 static lv_obj_t* g_main_screen = NULL;
 static lv_obj_t* g_active_screen = NULL;
+static lv_obj_t* g_label_uptime = NULL;
 
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
 static void on_ble_btn_click(lv_event_t* e);
 static void on_settings_btn_click(lv_event_t* e);
 static void on_ok_btn_click(lv_event_t* e);
-static void on_back_btn_click(lv_event_t* e);
 static void on_menu_btn_click(lv_event_t* e);
+static void update_uptime_cb(lv_timer_t* timer);
 
 lv_obj_t* ui_create_main_screen(void)
 {
@@ -119,23 +121,19 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_size(btn_ok, BUTTON_WIDTH, BUTTON_HEIGHT);
   lv_obj_add_style(btn_ok, ui_get_style_btn_primary(), 0);
   lv_obj_add_event_cb(btn_ok, on_ok_btn_click, LV_EVENT_CLICKED, NULL);
-  
+
   lv_obj_t* label_ok = lv_label_create(btn_ok);
   lv_label_set_text(label_ok, "OK");
   lv_obj_center(label_ok);
   lv_obj_add_style(label_ok, ui_get_style_label_title(), 0);
 
-  // Back button
-  lv_obj_t* btn_back = lv_btn_create(band_bottom);
-  lv_obj_set_size(btn_back, BUTTON_WIDTH, BUTTON_HEIGHT);
-  lv_obj_add_style(btn_back, ui_get_style_btn_secondary(), 0);
-  lv_obj_add_event_cb(btn_back, on_back_btn_click, LV_EVENT_CLICKED, NULL);
-  
-  lv_obj_t* label_back = lv_label_create(btn_back);
-  lv_label_set_text(label_back, "Back");
-  lv_obj_center(label_back);
-  lv_obj_add_style(label_back, ui_get_style_label_title(), 0);
-  
+  // Uptime label
+  g_label_uptime = lv_label_create(band_bottom);
+  lv_label_set_text(g_label_uptime, "UP: 00:00:00");
+  lv_obj_add_style(g_label_uptime, ui_get_style_label_title(), 0);
+  lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_center(g_label_uptime);
+
   // Menu button
   lv_obj_t* btn_menu = lv_btn_create(band_bottom);
   lv_obj_set_size(btn_menu, BUTTON_WIDTH, BUTTON_HEIGHT);
@@ -149,7 +147,9 @@ lv_obj_t* ui_create_main_screen(void)
   
   g_main_screen = scr;
   g_active_screen = scr;
-  
+
+  lv_timer_create(update_uptime_cb, 1000, NULL);
+
   printf("PIXEL: Main screen created\n");
   return scr;
 }
@@ -192,21 +192,25 @@ static void on_ok_btn_click(lv_event_t* e)
   printf("PIXEL: OK button clicked\n");
 }
 
-static void on_back_btn_click(lv_event_t* e)
-{
-  (void)e;
-  printf("PIXEL: Back button clicked\n");
-  
-  // Return to main screen
-  if (g_main_screen && g_active_screen != g_main_screen) {
-    ui_load_screen(g_main_screen);
-  }
-}
-
 static void on_menu_btn_click(lv_event_t* e)
 {
   (void)e;
   printf("PIXEL: Menu button clicked\n");
+}
+
+static void update_uptime_cb(lv_timer_t* timer)
+{
+  (void)timer;
+
+  if (!g_label_uptime) return;
+
+  uint32_t elapsed_ms = millis();
+  uint32_t total_seconds = elapsed_ms / 1000;
+  uint32_t hours = total_seconds / 3600;
+  uint32_t minutes = (total_seconds % 3600) / 60;
+  uint32_t seconds = total_seconds % 60;
+
+  lv_label_set_text_fmt(g_label_uptime, "UP: %02lu:%02lu:%02lu", hours, minutes, seconds);
 }
 
 // Screen management

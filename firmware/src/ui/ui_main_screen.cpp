@@ -88,7 +88,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_width(label_pet, LV_HOR_RES);
   lv_obj_set_style_text_align(label_pet, LV_TEXT_ALIGN_CENTER, 0);
   // Swap to a monospace font here if enabled in lv_conf.h for perfect ASCII alignment.
-  lv_obj_set_style_text_font(label_pet, &lv_font_montserrat_16, 0);
+  lv_obj_set_style_text_font(label_pet, &lv_font_unscii_16, 0);
   lv_obj_add_style(label_pet, ui_get_style_label_title(), 0);
   lv_obj_align(label_pet, LV_ALIGN_TOP_MID, 0, pet_start_y);
 

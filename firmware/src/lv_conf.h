@@ -64,10 +64,21 @@
    POLICES (FONTS)
    ========================================== */
 /* Activez uniquement celles dont vous avez besoin pour économiser la mémoire Flash */
-#define LV_FONT_MONTSERRAT_12 1
-#define LV_FONT_MONTSERRAT_14 1
-#define LV_FONT_MONTSERRAT_16 1
-#define LV_FONT_DEFAULT &lv_font_montserrat_14
+
+/* --- POLICES MODERNES (Désactivées pour look Hacker/Terminal) --- */
+#define LV_FONT_MONTSERRAT_12 0
+#define LV_FONT_MONTSERRAT_14 0
+#define LV_FONT_MONTSERRAT_16 0
+
+/* --- POLICES BITMAP / TERMINAL (Activées) --- */
+/* UNSCII 8px pour les logs/debug (très petit) */
+#define LV_FONT_UNSCII_8  1
+/* UNSCII 16px pour le texte principal (Pet, Menus) - Look Retro */
+#define LV_FONT_UNSCII_16 1
+
+/* Police par défaut : UNSCII 16px (Style Terminal) 
+ * Note : Définir ici évite les erreurs de syntaxe '&' dans platformio.ini sur Linux/Mac */
+#define LV_FONT_DEFAULT &lv_font_unscii_16
 
 /* ==========================================
    LOGGING (DEBUG)

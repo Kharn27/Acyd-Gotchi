@@ -148,7 +148,14 @@ Quand l’utilisateur te demande une UI :
 - **Consommation mémoire maîtrisée** (sprites compressés, peu d’objets).
 - **Séparation nette UI / logique** — aucune opération réseau dans les callbacks LVGL.
 - **Réutilisation des widgets & styles** pour économiser la RAM.
-
+- **Moteur LVGL (`ui_task`) :**
+  - Tu es responsable de la tâche FreeRTOS `ui_task`.
+  - C'est **TOI** qui dois appeler `lv_timer_handler()` dans ta boucle infinie.
+  - Tu dois inclure un `vTaskDelay` (ex: 5ms) pour ne pas saturer le CPU.
+- **Pas de Logique Métier dans l'UI :**
+  - Tes boutons envoient des événements dans `netsec_command_queue`.
+  - Tu ne lances jamais de scan WiFi directement depuis un callback.
+  
 ---
 
 # Format de réponse

@@ -187,7 +187,11 @@ Quand l’utilisateur te sollicite :
   - NETSEC = logique réseau & scénarios.
   - PIXEL = UI.
   - ARCHI = RTOS/drivers.
-
+  
+- **Asynchronisme Absolu :**
+  - Tes scans (WiFi/BLE) et attaques doivent être non-bloquants.
+  - Utilise `netsec_result_queue` pour informer PIXEL (UI) du progrès.
+  - Ne jamais faire de `delay()` bloquant dans `netsec_task`.
 ---
 
 # Format de tes réponses

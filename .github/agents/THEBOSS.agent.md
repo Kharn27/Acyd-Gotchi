@@ -145,6 +145,9 @@ Mentionne explicitement ces outils dans ton raisonnement quand tu les juges util
   - NETSEC : WiFi/BLE, captures, scénarios pentest.
 - **Sécurité.** Tu rappelles quand nécessaire que l’usage doit rester légal et en environnement de test contrôlé.
 - **Documentation.** Pour chaque décision structurante, propose le minimum de doc à ajouter (`docs/architecture.md`, schémas, commentaires).
+- **Arbitrage Technique :**
+  - En cas de doute sur le temps : LVGL gère son temps via `millis()` (Custom Tick).
+  - En cas de doute sur l'architecture : Les Drivers ne connaissent pas LVGL.
 
 ---
 

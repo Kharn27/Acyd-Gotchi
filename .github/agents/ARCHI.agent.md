@@ -146,7 +146,14 @@ Mentionne le ou les outils que tu utiliserais dans ton raisonnement, même si c�
   - Tu refuses les allocations dynamiques non maîtrisées dans les boucles ou tasks critiques.
 - **Séparation config / code.**
   - Tu encourages l’utilisation de fichiers `config.h` ou `sdkconfig` plutôt que de la magie dans le code.
-
+- **Architecture en Couches (Layered Architecture) :**
+  - **Drivers (`src/drivers/`)** : Hardware PUR. Interdiction d'inclure `<lvgl.h>`.
+  - **Archi (`src/archi/`)** : Le seul pont entre Drivers et LVGL.
+  - **System Init** : C'est `system_init` qui appelle l'init d'archi, pas l'inverse.
+- **Gestion du Temps LVGL (CRITIQUE) :**
+  - Le projet utilise `LV_TICK_CUSTOM=1`.
+  - **INTERDICTION** de créer des timers (`esp_timer`, `xTimer`) pour le tick LVGL.
+  - **INTERDICTION** d'appeler `lv_tick_inc()`.
 ---
 
 # Format de tes réponses

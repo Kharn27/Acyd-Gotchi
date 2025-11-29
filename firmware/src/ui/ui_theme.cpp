@@ -22,7 +22,7 @@ void ui_theme_init(void)
                                              lv_palette_main(LV_PALETTE_GREEN),
                                              lv_palette_main(LV_PALETTE_GREEN),
                                              true, /* dark mode */
-                                             &lv_font_unscii_16);
+                                             &lv_font_unscii_8);
     lv_disp_set_theme(disp, theme);
   }
 
@@ -31,6 +31,7 @@ void ui_theme_init(void)
   lv_style_set_bg_color(&style_btn_primary, lv_color_hex(COLOR_BG_MAIN));
   lv_style_set_bg_opa(&style_btn_primary, LV_OPA_COVER);
   lv_style_set_text_color(&style_btn_primary, lv_color_hex(COLOR_TEXT_PRIMARY));
+  lv_style_set_text_font(&style_btn_primary, &lv_font_unscii_8);
   lv_style_set_border_width(&style_btn_primary, 2);
   lv_style_set_border_color(&style_btn_primary, lv_color_hex(COLOR_BORDER));
   lv_style_set_radius(&style_btn_primary, RADIUS_NORMAL);
@@ -42,6 +43,7 @@ void ui_theme_init(void)
   lv_style_set_bg_color(&style_btn_secondary, lv_color_hex(COLOR_SURFACE));
   lv_style_set_bg_opa(&style_btn_secondary, LV_OPA_COVER);
   lv_style_set_text_color(&style_btn_secondary, lv_color_hex(COLOR_TEXT_PRIMARY));
+  lv_style_set_text_font(&style_btn_secondary, &lv_font_unscii_8);
   lv_style_set_border_width(&style_btn_secondary, 1);
   lv_style_set_border_color(&style_btn_secondary, lv_color_hex(COLOR_BORDER));
   lv_style_set_radius(&style_btn_secondary, RADIUS_SMALL);
@@ -56,7 +58,7 @@ void ui_theme_init(void)
   // Initialize normal label style
   lv_style_init(&style_label_normal);
   lv_style_set_text_color(&style_label_normal, lv_color_hex(COLOR_TEXT_SECONDARY));
-  lv_style_set_text_font(&style_label_normal, &lv_font_unscii_16);
+  lv_style_set_text_font(&style_label_normal, &lv_font_unscii_8);
 }
 
 lv_style_t* ui_get_style_btn_primary(void)

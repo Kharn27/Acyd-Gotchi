@@ -51,33 +51,36 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_size(btn_wifi, 40, 30);
   lv_obj_add_style(btn_wifi, ui_get_style_btn_secondary(), 0);
   lv_obj_add_event_cb(btn_wifi, on_wifi_btn_click, LV_EVENT_CLICKED, NULL);
-  
+
   lv_obj_t* label_wifi = lv_label_create(btn_wifi);
   lv_label_set_text(label_wifi, "WiFi");
   lv_obj_center(label_wifi);
-  lv_obj_add_style(label_wifi, ui_get_style_label_title(), 0);
-  
+  lv_obj_add_style(label_wifi, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(label_wifi, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+
   // BLE button
   lv_obj_t* btn_ble = lv_btn_create(band_top);
   lv_obj_set_size(btn_ble, 40, 30);
   lv_obj_add_style(btn_ble, ui_get_style_btn_secondary(), 0);
   lv_obj_add_event_cb(btn_ble, on_ble_btn_click, LV_EVENT_CLICKED, NULL);
-  
+
   lv_obj_t* label_ble = lv_label_create(btn_ble);
   lv_label_set_text(label_ble, "BLE");
   lv_obj_center(label_ble);
-  lv_obj_add_style(label_ble, ui_get_style_label_title(), 0);
-  
+  lv_obj_add_style(label_ble, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(label_ble, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+
   // Settings button
   lv_obj_t* btn_settings = lv_btn_create(band_top);
   lv_obj_set_size(btn_settings, 40, 30);
   lv_obj_add_style(btn_settings, ui_get_style_btn_secondary(), 0);
   lv_obj_add_event_cb(btn_settings, on_settings_btn_click, LV_EVENT_CLICKED, NULL);
-  
+
   lv_obj_t* label_settings = lv_label_create(btn_settings);
   lv_label_set_text(label_settings, LV_SYMBOL_SETTINGS);
   lv_obj_center(label_settings);
-  lv_obj_add_style(label_settings, ui_get_style_label_title(), 0);
+  lv_obj_add_style(label_settings, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(label_settings, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
   
   // === CENTRAL PET AREA ===
   int pet_start_y = BAND_HEIGHT + PAD_LARGE;
@@ -125,12 +128,14 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_t* label_ok = lv_label_create(btn_ok);
   lv_label_set_text(label_ok, "OK");
   lv_obj_center(label_ok);
-  lv_obj_add_style(label_ok, ui_get_style_label_title(), 0);
+  lv_obj_add_style(label_ok, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(label_ok, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
 
   // Uptime label
   g_label_uptime = lv_label_create(band_bottom);
   lv_label_set_text(g_label_uptime, "UP: 00:00:00");
-  lv_obj_add_style(g_label_uptime, ui_get_style_label_title(), 0);
+  lv_obj_add_style(g_label_uptime, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
   lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_center(g_label_uptime);
 
@@ -143,7 +148,8 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_t* label_menu = lv_label_create(btn_menu);
   lv_label_set_text(label_menu, "Menu");
   lv_obj_center(label_menu);
-  lv_obj_add_style(label_menu, ui_get_style_label_title(), 0);
+  lv_obj_add_style(label_menu, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(label_menu, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
   
   g_main_screen = scr;
   g_active_screen = scr;

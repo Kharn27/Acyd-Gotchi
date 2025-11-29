@@ -34,6 +34,11 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
 
+  // Background image (binary format stored on S: driver)
+  lv_obj_t* bg_img = lv_img_create(scr);
+  lv_img_set_src(bg_img, "S:/img/bg_1.bin");
+  lv_obj_set_pos(bg_img, 0, 40);
+
   // === TOP BUTTON BAND ===
   lv_obj_t* band_top = lv_obj_create(scr);
   lv_obj_set_size(band_top, LV_HOR_RES, BAND_HEIGHT);
@@ -97,13 +102,23 @@ lv_obj_t* ui_create_main_screen(void)
 
   // Status info bar (pet name, health, etc.)
   int status_y = pet_start_y + MAIN_SCREEN_PET_SIZE + PAD_NORMAL;
-  
+
+  static lv_style_t label_status_bg_style;
+  static bool label_status_bg_style_inited = false;
+  if (!label_status_bg_style_inited) {
+    lv_style_init(&label_status_bg_style);
+    lv_style_set_bg_color(&label_status_bg_style, lv_color_hex(0x000000));
+    lv_style_set_bg_opa(&label_status_bg_style, LV_OPA_50);
+    label_status_bg_style_inited = true;
+  }
+
   lv_obj_t* label_status = lv_label_create(scr);
   lv_label_set_text(label_status, "Acyd | Health: 100% | Mood: :) ");
   lv_obj_set_pos(label_status, PAD_NORMAL, status_y);
   lv_obj_set_width(label_status, LV_HOR_RES - 2 * PAD_NORMAL);
   lv_label_set_long_mode(label_status, LV_LABEL_LONG_WRAP);
   lv_obj_add_style(label_status, ui_get_style_label_normal(), 0);
+  lv_obj_add_style(label_status, &label_status_bg_style, 0);
   
   // === BOTTOM BUTTON BAND ===
   int band_bottom_y = LV_VER_RES - BAND_HEIGHT;

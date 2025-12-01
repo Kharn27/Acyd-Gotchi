@@ -28,15 +28,17 @@ void ui_theme_init(void)
 
   // Initialize primary button style
   lv_style_init(&style_btn_primary);
-  lv_style_set_bg_color(&style_btn_primary, lv_color_hex(COLOR_BG_MAIN));
-  lv_style_set_bg_opa(&style_btn_primary, LV_OPA_COVER);
+  lv_style_set_bg_color(&style_btn_primary, lv_color_hex(COLOR_PRIMARY));
+  lv_style_set_bg_opa(&style_btn_primary, LV_OPA_30);
   lv_style_set_text_color(&style_btn_primary, lv_color_hex(COLOR_TEXT_PRIMARY));
   lv_style_set_text_font(&style_btn_primary, &lv_font_unscii_8);
   lv_style_set_border_width(&style_btn_primary, 2);
   lv_style_set_border_color(&style_btn_primary, lv_color_hex(COLOR_BORDER));
   lv_style_set_radius(&style_btn_primary, RADIUS_NORMAL);
   lv_style_set_pad_all(&style_btn_primary, PAD_NORMAL);
-  lv_style_set_shadow_opa(&style_btn_primary, LV_OPA_TRANSP);
+  lv_style_set_shadow_color(&style_btn_primary, lv_color_hex(COLOR_PRIMARY));
+  lv_style_set_shadow_width(&style_btn_primary, 10);
+  lv_style_set_shadow_opa(&style_btn_primary, LV_OPA_40);
 
   // Initialize secondary button style
   lv_style_init(&style_btn_secondary);

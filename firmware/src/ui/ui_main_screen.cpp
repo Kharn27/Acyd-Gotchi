@@ -179,7 +179,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_timer_create(update_uptime_cb, 1000, NULL);
   lv_timer_create(wallpaper_timer_cb, 30000, NULL);
 
-  printf("PIXEL: Main screen created\n");
+  Serial.println("PIXEL: Main screen created");
   return scr;
 }
 
@@ -187,7 +187,7 @@ lv_obj_t* ui_create_main_screen(void)
 static void on_wifi_btn_click(lv_event_t* e)
 {
   (void)e;
-  printf("PIXEL: WiFi button clicked\n");
+  Serial.println("PIXEL: WiFi button clicked");
   
   // Post UI event to queue (if available)
   extern QueueHandle_t ui_event_queue;
@@ -200,7 +200,7 @@ static void on_wifi_btn_click(lv_event_t* e)
 static void on_ble_btn_click(lv_event_t* e)
 {
   (void)e;
-  printf("PIXEL: BLE button clicked\n");
+  Serial.println("PIXEL: BLE button clicked");
   
   extern QueueHandle_t ui_event_queue;
   if (ui_event_queue) {
@@ -212,19 +212,19 @@ static void on_ble_btn_click(lv_event_t* e)
 static void on_settings_btn_click(lv_event_t* e)
 {
   (void)e;
-  printf("PIXEL: Settings button clicked\n");
+  Serial.println("PIXEL: Settings button clicked");
 }
 
 static void on_ok_btn_click(lv_event_t* e)
 {
   (void)e;
-  printf("PIXEL: OK button clicked\n");
+  Serial.println("PIXEL: OK button clicked");
 }
 
 static void on_menu_btn_click(lv_event_t* e)
 {
   (void)e;
-  printf("PIXEL: Menu button clicked\n");
+  Serial.println("PIXEL: Menu button clicked");
 }
 
 static void update_uptime_cb(lv_timer_t* timer)
@@ -255,7 +255,7 @@ static void wallpaper_timer_cb(lv_timer_t* timer)
 
   char path[32];
   sprintf(path, "S:/img/bg_%d.bin", g_bg_index);
-  printf("PIXEL: Changing wallpaper to %s\n", path);
+  Serial.printf("PIXEL: Changing wallpaper to %s\n", path);
   lv_img_set_src(g_bg_img, path);
 }
 
@@ -268,7 +268,7 @@ void ui_load_screen(lv_obj_t* screen)
   if (disp) {
     lv_disp_load_scr(screen);
     g_active_screen = screen;
-    printf("PIXEL: Screen loaded\n");
+    Serial.println("PIXEL: Screen loaded");
   }
 }
 

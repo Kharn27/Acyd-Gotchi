@@ -9,6 +9,7 @@
 #include "ui_theme.h"
 #include "lvgl.h"
 
+#include <Arduino.h>
 #include <stdio.h>
 
 static lv_obj_t* g_wifi_screen = NULL;
@@ -41,9 +42,9 @@ lv_obj_t* ui_create_wifi_screen(void)
   lv_label_set_text(status, "Scanning...");
   lv_obj_set_pos(status, PAD_NORMAL, LV_VER_RES - 30);
   lv_obj_add_style(status, ui_get_style_label_normal(), 0);
-  
+
   g_wifi_screen = scr;
-  printf("PIXEL: WiFi screen created\n");
+  Serial.println("PIXEL: WiFi screen created");
   return scr;
 }
 

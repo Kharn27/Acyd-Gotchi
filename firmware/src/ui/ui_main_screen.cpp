@@ -108,7 +108,11 @@ lv_obj_t* ui_create_main_screen(void)
   if (!label_status_bg_style_inited) {
     lv_style_init(&label_status_bg_style);
     lv_style_set_bg_color(&label_status_bg_style, lv_color_hex(0x000000));
-    lv_style_set_bg_opa(&label_status_bg_style, LV_OPA_50);
+    lv_style_set_bg_opa(&label_status_bg_style, LV_OPA_80);
+    lv_style_set_pad_left(&label_status_bg_style, PAD_SMALL);
+    lv_style_set_pad_right(&label_status_bg_style, PAD_SMALL);
+    lv_style_set_pad_top(&label_status_bg_style, PAD_TINY);
+    lv_style_set_pad_bottom(&label_status_bg_style, PAD_TINY);
     label_status_bg_style_inited = true;
   }
 
@@ -119,6 +123,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_long_mode(label_status, LV_LABEL_LONG_WRAP);
   lv_obj_add_style(label_status, ui_get_style_label_normal(), 0);
   lv_obj_add_style(label_status, &label_status_bg_style, 0);
+  lv_obj_set_style_text_color(label_status, lv_color_hex(0x00FF00), 0);
   
   // === BOTTOM BUTTON BAND ===
   int band_bottom_y = LV_VER_RES - BAND_HEIGHT;

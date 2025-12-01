@@ -61,18 +61,11 @@ static void* fs_open(lv_fs_drv_t* drv, const char* path, lv_fs_mode_t mode)
 
   const char* open_mode = (mode & LV_FS_MODE_WR) ? "w" : "r";
 
-  Serial.print("ARCHI: LVGL fs_open requested path: ");
-  Serial.println(path ? path : "<null>");
-  Serial.print("ARCHI: LVGL fs_open full path: ");
-  Serial.println(full_path.c_str());
-
   File file = SPIFFS.open(full_path.c_str(), open_mode);
   if (!file) {
     Serial.println("ARCHI: LVGL fs_open FAILED");
     return NULL;
   }
-
-  Serial.println("ARCHI: LVGL fs_open SUCCESS");
   return new File(file);
 }
 

@@ -12,6 +12,9 @@ void display_hw_init(void)
     tft.init();
     tft.setRotation(1);
     tft.fillScreen(TFT_BLACK);
+    // On s'assure que le swap hardware est désactivé par défaut,
+    // on le gérera manuellement lors du push
+    tft.setSwapBytes(false);
 
 #ifdef BACKLIGHT_PIN
     pinMode(BACKLIGHT_PIN, OUTPUT);
@@ -44,6 +47,7 @@ void display_hw_push_pixels(int32_t x1, int32_t y1, uint32_t w, uint32_t h, cons
 {
     tft.startWrite();
     tft.setAddrWindow(x1, y1, w, h);
-    tft.pushPixels(const_cast<uint16_t*>(color_p), w * h);
+    // tft.pushPixels(const_cast<uint16_t*>(color_p), w * h);
+    tft.pushColors(const_cast<uint16_t*>(color_p), w * h, true);
     tft.endWrite();
 }

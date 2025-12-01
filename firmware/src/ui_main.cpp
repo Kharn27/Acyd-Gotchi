@@ -9,6 +9,7 @@
 #include "ui_theme.h"
 #include "lvgl.h"
 
+#include <Arduino.h>
 #include <stdio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -22,12 +23,12 @@ static lv_obj_t* g_ble_screen = NULL;
 void ui_init(QueueHandle_t ui_queue)
 {
   g_ui_queue = ui_queue;
-  printf("PIXEL: UI module initialized\n");
+  Serial.println("PIXEL: UI module initialized");
 }
 
 void ui_show_main_screen(void)
 {
-  printf("PIXEL: Showing main screen\n");
+  Serial.println("PIXEL: Showing main screen");
   
   if (!g_main_screen) {
     // Initialize theme first
@@ -45,7 +46,7 @@ void ui_show_main_screen(void)
 
 void ui_show_wifi_screen(void)
 {
-  printf("PIXEL: Showing WiFi screen\n");
+  Serial.println("PIXEL: Showing WiFi screen");
   
   if (!g_wifi_screen) {
     g_wifi_screen = ui_create_wifi_screen();
@@ -56,7 +57,7 @@ void ui_show_wifi_screen(void)
 
 void ui_show_ble_screen(void)
 {
-  printf("PIXEL: Showing BLE screen\n");
+  Serial.println("PIXEL: Showing BLE screen");
   
   if (!g_ble_screen) {
     g_ble_screen = ui_create_ble_screen();

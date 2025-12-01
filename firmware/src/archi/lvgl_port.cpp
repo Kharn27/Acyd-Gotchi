@@ -204,7 +204,7 @@ void lvgl_port_init(void)
   fs_drv.tell_cb = fs_tell;
   lv_fs_drv_register(&fs_drv);
 
-  printf("ARCHI: Initializing display hardware...\n");
+  Serial.println("ARCHI: Initializing display hardware...");
   display_hw_init();
 
   lv_disp_draw_buf_init(&s_draw_buf, s_draw_buf_1, NULL, LV_HOR_RES_MAX * 10);
@@ -218,7 +218,7 @@ void lvgl_port_init(void)
 
   g_disp = lv_disp_drv_register(&disp_drv);
 
-  printf("ARCHI: Initializing touch hardware...\n");
+  Serial.println("ARCHI: Initializing touch hardware...");
   cyd_touch_init();
 
   static lv_indev_drv_t indev_drv;
@@ -229,7 +229,7 @@ void lvgl_port_init(void)
 
   archi_apply_theme();
 
-  printf("ARCHI: LVGL port initialized\n");
+  Serial.println("ARCHI: LVGL port initialized");
 }
 
 void lvgl_port_deinit(void)
@@ -237,7 +237,7 @@ void lvgl_port_deinit(void)
   display_hw_deinit();
   cyd_touch_deinit();
 
-  printf("ARCHI: LVGL port deinitialized\n");
+  Serial.println("ARCHI: LVGL port deinitialized");
 }
 
 lv_disp_t* lvgl_port_get_disp(void)

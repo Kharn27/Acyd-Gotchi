@@ -23,8 +23,6 @@ static uint8_t g_bg_index = 1;
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
 static void on_ble_btn_click(lv_event_t* e);
-static void on_settings_btn_click(lv_event_t* e);
-static void on_ok_btn_click(lv_event_t* e);
 static void on_menu_btn_click(lv_event_t* e);
 static void update_uptime_cb(lv_timer_t* timer);
 static void wallpaper_timer_cb(lv_timer_t* timer);
@@ -52,13 +50,13 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_style_border_width(band_top, 0, 0);
   lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_top, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(band_top, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_flex_align(band_top, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   
   // WiFi button
   lv_obj_t* btn_wifi = lv_btn_create(band_top);
   lv_obj_set_size(btn_wifi, 40, 30);
   lv_obj_add_style(btn_wifi, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_wifi, on_wifi_btn_click, LV_EVENT_CLICKED, NULL);
+  lv_obj_add_event_cb(btn_wifi, on_wifi_btn_click, LV_EVENT_ALL, NULL);
 
   lv_obj_t* label_wifi = lv_label_create(btn_wifi);
   lv_label_set_text(label_wifi, "WiFi");
@@ -70,25 +68,13 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_t* btn_ble = lv_btn_create(band_top);
   lv_obj_set_size(btn_ble, 40, 30);
   lv_obj_add_style(btn_ble, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_ble, on_ble_btn_click, LV_EVENT_CLICKED, NULL);
+  lv_obj_add_event_cb(btn_ble, on_ble_btn_click, LV_EVENT_ALL, NULL);
 
   lv_obj_t* label_ble = lv_label_create(btn_ble);
   lv_label_set_text(label_ble, "BLE");
   lv_obj_center(label_ble);
   lv_obj_add_style(label_ble, ui_get_style_label_normal(), 0);
   lv_obj_set_style_text_color(label_ble, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
-
-  // Settings button
-  lv_obj_t* btn_settings = lv_btn_create(band_top);
-  lv_obj_set_size(btn_settings, 40, 30);
-  lv_obj_add_style(btn_settings, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_settings, on_settings_btn_click, LV_EVENT_CLICKED, NULL);
-
-  lv_obj_t* label_settings = lv_label_create(btn_settings);
-  lv_label_set_text(label_settings, LV_SYMBOL_SETTINGS);
-  lv_obj_center(label_settings);
-  lv_obj_add_style(label_settings, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_settings, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
   
   // === CENTRAL PET AREA ===
   int pet_start_y = BAND_HEIGHT + PAD_LARGE;
@@ -139,33 +125,25 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_style_border_width(band_bottom, 0, 0);
   lv_obj_set_style_pad_all(band_bottom, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_bottom, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(band_bottom, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  
-  // OK button
-  lv_obj_t* btn_ok = lv_btn_create(band_bottom);
-  lv_obj_set_size(btn_ok, BUTTON_WIDTH, BUTTON_HEIGHT);
-  lv_obj_add_style(btn_ok, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_ok, on_ok_btn_click, LV_EVENT_CLICKED, NULL);
-
-  lv_obj_t* label_ok = lv_label_create(btn_ok);
-  lv_label_set_text(label_ok, "OK");
-  lv_obj_center(label_ok);
-  lv_obj_add_style(label_ok, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_ok, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  lv_obj_set_flex_align(band_bottom, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
   // Uptime label
   g_label_uptime = lv_label_create(band_bottom);
   lv_label_set_text(g_label_uptime, "UP: 00:00:00");
+  lv_label_set_long_mode(g_label_uptime, LV_LABEL_LONG_CLIP);
   lv_obj_add_style(g_label_uptime, ui_get_style_label_normal(), 0);
   lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
-  lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_center(g_label_uptime);
+  lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_LEFT, 0);
+  lv_obj_set_style_pad_left(g_label_uptime, PAD_SMALL, 0);
+  lv_obj_set_width(g_label_uptime, LV_PCT(100));
+  lv_obj_set_flex_grow(g_label_uptime, 2);
 
   // Menu button
   lv_obj_t* btn_menu = lv_btn_create(band_bottom);
   lv_obj_set_size(btn_menu, BUTTON_WIDTH, BUTTON_HEIGHT);
   lv_obj_add_style(btn_menu, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_menu, on_menu_btn_click, LV_EVENT_CLICKED, NULL);
+  lv_obj_add_event_cb(btn_menu, on_menu_btn_click, LV_EVENT_ALL, NULL);
+  lv_obj_set_flex_grow(btn_menu, 1);
   
   lv_obj_t* label_menu = lv_label_create(btn_menu);
   lv_label_set_text(label_menu, "Menu");
@@ -186,45 +164,34 @@ lv_obj_t* ui_create_main_screen(void)
 // Button callbacks
 static void on_wifi_btn_click(lv_event_t* e)
 {
-  (void)e;
-  Serial.println("PIXEL: WiFi button clicked");
-  
-  // Post UI event to queue (if available)
-  extern QueueHandle_t ui_event_queue;
-  if (ui_event_queue) {
-    ui_event_t event = UI_EVENT_BUTTON_WIFI;
-    xQueueSend(ui_event_queue, &event, 0);
+  lv_event_code_t code = lv_event_get_code(e);
+  if (code == LV_EVENT_PRESSED) {
+    Serial.println("PIXEL: WiFi button pressed");
+  } else if (code == LV_EVENT_RELEASED || code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+    Serial.println("PIXEL: WiFi button clicked");
+    ui_show_wifi_screen();
   }
 }
 
 static void on_ble_btn_click(lv_event_t* e)
 {
-  (void)e;
-  Serial.println("PIXEL: BLE button clicked");
-  
-  extern QueueHandle_t ui_event_queue;
-  if (ui_event_queue) {
-    ui_event_t event = UI_EVENT_BUTTON_BLE;
-    xQueueSend(ui_event_queue, &event, 0);
+  lv_event_code_t code = lv_event_get_code(e);
+  if (code == LV_EVENT_PRESSED) {
+    Serial.println("PIXEL: BLE button pressed");
+  } else if (code == LV_EVENT_RELEASED || code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+    Serial.println("PIXEL: BLE button clicked");
+    ui_show_ble_screen();
   }
-}
-
-static void on_settings_btn_click(lv_event_t* e)
-{
-  (void)e;
-  Serial.println("PIXEL: Settings button clicked");
-}
-
-static void on_ok_btn_click(lv_event_t* e)
-{
-  (void)e;
-  Serial.println("PIXEL: OK button clicked");
 }
 
 static void on_menu_btn_click(lv_event_t* e)
 {
-  (void)e;
-  Serial.println("PIXEL: Menu button clicked");
+  lv_event_code_t code = lv_event_get_code(e);
+  if (code == LV_EVENT_PRESSED) {
+    Serial.println("PIXEL: Menu button pressed");
+  } else if (code == LV_EVENT_RELEASED || code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+    Serial.println("PIXEL: Menu button clicked");
+  }
 }
 
 static void update_uptime_cb(lv_timer_t* timer)

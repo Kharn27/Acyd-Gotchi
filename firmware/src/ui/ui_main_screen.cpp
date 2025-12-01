@@ -38,7 +38,7 @@ lv_obj_t* ui_create_main_screen(void)
   // Background image (binary format stored on S: driver)
   lv_obj_t* bg_img = lv_img_create(scr);
   lv_img_set_src(bg_img, "S:/img/bg_1.bin");
-  lv_obj_set_pos(bg_img, 0, 40);
+  lv_obj_set_pos(bg_img, 0, 0);
 
   // === TOP BUTTON BAND ===
   lv_obj_t* band_top = lv_obj_create(scr);

@@ -5,6 +5,7 @@
 #include <TFT_eSPI.h>
 
 static TFT_eSPI tft = TFT_eSPI();
+static constexpr uint8_t BACKLIGHT_LEVEL = 150;
 
 void display_hw_init(void)
 {
@@ -18,14 +19,14 @@ void display_hw_init(void)
 
 #ifdef BACKLIGHT_PIN
     pinMode(BACKLIGHT_PIN, OUTPUT);
-    digitalWrite(BACKLIGHT_PIN, HIGH);
+    analogWrite(BACKLIGHT_PIN, BACKLIGHT_LEVEL);
 #endif
 }
 
 void display_hw_deinit(void)
 {
 #ifdef BACKLIGHT_PIN
-    digitalWrite(BACKLIGHT_PIN, LOW);
+    analogWrite(BACKLIGHT_PIN, 0);
 #endif
 }
 
@@ -37,7 +38,7 @@ void display_hw_set_rotation(uint8_t rotation)
 void display_hw_set_backlight(bool on)
 {
 #ifdef BACKLIGHT_PIN
-    digitalWrite(BACKLIGHT_PIN, on ? HIGH : LOW);
+    analogWrite(BACKLIGHT_PIN, on ? BACKLIGHT_LEVEL : 0);
 #else
     (void)on;
 #endif

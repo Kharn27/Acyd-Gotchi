@@ -176,6 +176,9 @@ static void my_touch_read(lv_indev_drv_t* indev_drv, lv_indev_data_t* data)
   bool pressed = cyd_touch_read(&x, &y);
 
   if (pressed) {
+    // Temporary debug log to verify touch pipeline
+    Serial.printf("ARCHI: Touch detected at X=%d, Y=%d\n", x, y);
+
     data->point.x = x;
     data->point.y = y;
     data->state = LV_INDEV_STATE_PR;

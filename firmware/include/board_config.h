@@ -59,7 +59,7 @@
 #define TS_MAXY 3800
 
 /* FreeRTOS task configuration */
-#define UI_TASK_STACK_SIZE    (8 * 1024)      // 8 KB for UI task
+#define UI_TASK_STACK_SIZE    (8 * 1024)      // 8 KB for UI task (raised for LVGL stability)
 #define NETSEC_TASK_STACK_SIZE (12 * 1024)    // 12 KB for network task
 #define UI_TASK_PRIORITY       3
 #define NETSEC_TASK_PRIORITY   2

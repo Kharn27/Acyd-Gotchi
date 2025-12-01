@@ -15,6 +15,7 @@
 #include <freertos/task.h>
 
 #include <Arduino.h>
+#include <ESP.h>
 
 void ui_task(void * pvParameters)
 {
@@ -32,10 +33,18 @@ void ui_task(void * pvParameters)
   // Task loop: call lv_timer_handler() every ~5 ms
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(5);  // 5 ms period
+  uint32_t last_log = 0;
   
   while (1) {
     // Process LVGL internal timers and redraw
     lv_timer_handler();
+
+    // Heartbeat log every ~5 seconds to detect silent crashes/overflows
+    uint32_t now = millis();
+    if (now - last_log > 5000) {
+      Serial.printf("SYSTEM: UI Task running... (Free Heap: %d)\n", ESP.getFreeHeap());
+      last_log = now;
+    }
     
     // Handle UI events from queue (non-blocking)
     ui_event_t event;

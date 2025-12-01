@@ -108,7 +108,7 @@ lv_obj_t* ui_create_main_screen(void)
   if (!label_status_bg_style_inited) {
     lv_style_init(&label_status_bg_style);
     lv_style_set_bg_color(&label_status_bg_style, lv_color_hex(0x000000));
-    lv_style_set_bg_opa(&label_status_bg_style, LV_OPA_80);
+    lv_style_set_bg_opa(&label_status_bg_style, LV_OPA_30);
     lv_style_set_pad_left(&label_status_bg_style, PAD_SMALL);
     lv_style_set_pad_right(&label_status_bg_style, PAD_SMALL);
     lv_style_set_pad_top(&label_status_bg_style, PAD_TINY);

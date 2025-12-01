@@ -14,14 +14,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include <stdio.h>
+#include <Arduino.h>
 
 void ui_task(void * pvParameters)
 {
   (void)pvParameters;
   
-  printf("UI Task started on core %d, priority %d\n", 
-         xPortGetCoreID(), uxTaskPriorityGet(NULL));
+  Serial.printf("UI Task started on core %d, priority %d\n",
+                xPortGetCoreID(), uxTaskPriorityGet(NULL));
   
   // Initialize LVGL and drivers
   lvgl_port_init();
@@ -43,17 +43,17 @@ void ui_task(void * pvParameters)
       // Process UI event
       switch (event) {
         case UI_EVENT_BUTTON_WIFI:
-          printf("UI Event: WiFi button pressed\n");
+          Serial.println("UI Event: WiFi button pressed");
           ui_show_wifi_screen();
           break;
-        
+
         case UI_EVENT_BUTTON_BLE:
-          printf("UI Event: BLE button pressed\n");
+          Serial.println("UI Event: BLE button pressed");
           ui_show_ble_screen();
           break;
-        
+
         case UI_EVENT_UPDATE_PET:
-          printf("UI Event: Update pet\n");
+          Serial.println("UI Event: Update pet");
           // Pet state updated, LVGL will redraw on next cycle
           break;
         

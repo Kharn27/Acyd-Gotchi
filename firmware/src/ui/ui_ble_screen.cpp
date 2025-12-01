@@ -9,6 +9,7 @@
 #include "ui_theme.h"
 #include "lvgl.h"
 
+#include <Arduino.h>
 #include <stdio.h>
 
 static lv_obj_t* g_ble_screen = NULL;
@@ -41,9 +42,9 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_label_set_text(status, "Scanning...");
   lv_obj_set_pos(status, PAD_NORMAL, LV_VER_RES - 30);
   lv_obj_add_style(status, ui_get_style_label_normal(), 0);
-  
+
   g_ble_screen = scr;
-  printf("PIXEL: BLE screen created\n");
+  Serial.println("PIXEL: BLE screen created");
   return scr;
 }
 
@@ -64,8 +65,8 @@ lv_obj_t* ui_create_settings_screen(void)
   lv_label_set_text(text, "Settings coming soon!");
   lv_obj_set_pos(text, PAD_NORMAL, 60);
   lv_obj_add_style(text, ui_get_style_label_normal(), 0);
-  
-  printf("PIXEL: Settings screen created\n");
+
+  Serial.println("PIXEL: Settings screen created");
   return scr;
 }
 

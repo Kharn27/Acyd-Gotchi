@@ -8,6 +8,7 @@
 #include "touch_driver.h"
 #include "board_config.h"
 
+#include <Arduino.h>
 #include <stdio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -32,23 +33,23 @@ static uint16_t map_value(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t
 
 void cyd_touch_init(void)
 {
-  printf("ARCHI: Touch init (XPT2046)\n");
+  Serial.println("ARCHI: Touch init (XPT2046)");
   
   // Create touch mutex
   if (!g_touch_mutex) {
     g_touch_mutex = xSemaphoreCreateMutex();
     if (!g_touch_mutex) {
-      printf("ERROR: Failed to create touch mutex\n");
+      Serial.println("ERROR: Failed to create touch mutex");
       return;
     }
   }
   
   // Initialize XPT2046
   if (!ts.begin()) {
-    printf("ERROR: XPT2046 touchscreen begin failed\n");
+    Serial.println("ERROR: XPT2046 touchscreen begin failed");
     return;
   }
-  printf("ARCHI: XPT2046 touchscreen initialized\n");
+  Serial.println("ARCHI: XPT2046 touchscreen initialized");
 }
 
 bool cyd_touch_read(uint16_t * x, uint16_t * y)
@@ -89,7 +90,7 @@ bool cyd_touch_read(uint16_t * x, uint16_t * y)
 
 void cyd_touch_deinit(void)
 {
-  printf("ARCHI: Touch deinit\n");
+  Serial.println("ARCHI: Touch deinit");
   
   if (g_touch_mutex) {
     vSemaphoreDelete(g_touch_mutex);

@@ -18,7 +18,7 @@
  * Si vos couleurs sont bizarres (glitchy), changez ceci de 1 à 0 ou inversement.
  * Généralement 0 pour TFT_eSPI si on utilise tft.pushColors() correctement,
  * mais 1 permet souvent d'optimiser le transfert SPI. */
-#define LV_COLOR_16_SWAP 1
+#define LV_COLOR_16_SWAP 0
 
 /* ==========================================
    MÉMOIRE

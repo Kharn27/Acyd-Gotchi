@@ -17,6 +17,8 @@
 static lv_obj_t* g_main_screen = NULL;
 static lv_obj_t* g_active_screen = NULL;
 static lv_obj_t* g_label_uptime = NULL;
+static lv_obj_t* g_bg_img = NULL;
+static uint8_t g_bg_index = 1;
 
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
@@ -25,6 +27,7 @@ static void on_settings_btn_click(lv_event_t* e);
 static void on_ok_btn_click(lv_event_t* e);
 static void on_menu_btn_click(lv_event_t* e);
 static void update_uptime_cb(lv_timer_t* timer);
+static void wallpaper_timer_cb(lv_timer_t* timer);
 
 lv_obj_t* ui_create_main_screen(void)
 {
@@ -36,9 +39,9 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
   // Background image (binary format stored on S: driver)
-  lv_obj_t* bg_img = lv_img_create(scr);
-  lv_img_set_src(bg_img, "S:/img/bg_1.bin");
-  lv_obj_set_pos(bg_img, 0, 0);
+  g_bg_img = lv_img_create(scr);
+  lv_img_set_src(g_bg_img, "S:/img/bg_1.bin");
+  lv_obj_set_pos(g_bg_img, 0, 0);
 
   // === TOP BUTTON BAND ===
   lv_obj_t* band_top = lv_obj_create(scr);
@@ -174,6 +177,7 @@ lv_obj_t* ui_create_main_screen(void)
   g_active_screen = scr;
 
   lv_timer_create(update_uptime_cb, 1000, NULL);
+  lv_timer_create(wallpaper_timer_cb, 30000, NULL);
 
   printf("PIXEL: Main screen created\n");
   return scr;
@@ -236,6 +240,23 @@ static void update_uptime_cb(lv_timer_t* timer)
   uint32_t seconds = total_seconds % 60;
 
   lv_label_set_text_fmt(g_label_uptime, "UP: %02lu:%02lu:%02lu", hours, minutes, seconds);
+}
+
+static void wallpaper_timer_cb(lv_timer_t* timer)
+{
+  (void)timer;
+
+  if (!g_bg_img) return;
+
+  g_bg_index++;
+  if (g_bg_index > 6) {
+    g_bg_index = 1;
+  }
+
+  char path[32];
+  sprintf(path, "S:/img/bg_%d.bin", g_bg_index);
+  printf("PIXEL: Changing wallpaper to %s\n", path);
+  lv_img_set_src(g_bg_img, path);
 }
 
 // Screen management

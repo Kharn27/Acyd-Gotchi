@@ -14,18 +14,18 @@
 extern "C" {
 #endif
 
-// Color palette (RGB565 on ESP32-CYD)
+// Color palette (24-bit RGB hex)
 // If the background looks inverted (gray/white), enable TFT_INVERSION_ON in platformio.ini.
-#define COLOR_BG_DARK     0x0000  // Absolute black
-#define COLOR_BG_MAIN     0x0000  // Terminal black
-#define COLOR_SURFACE     0x0000  // Keep surfaces flat/black for wireframe look
-#define COLOR_PRIMARY     0x07E0  // Neon green (highlights)
-#define COLOR_ACCENT      0x07E0  // Accent also neon green for cohesive matrix look
-#define COLOR_TEXT_PRIMARY 0x07E0  // Matrix green text
-#define COLOR_TEXT_SECONDARY 0x7BEF // Dim gray for secondary text
-#define COLOR_BORDER      0x07E0  // Green outlines
-#define COLOR_SUCCESS     0x07E0  // Green
-#define COLOR_ERROR       0xF800  // Red
+#define COLOR_BG_DARK     0x000000  // Absolute black
+#define COLOR_BG_MAIN     0x000000  // Terminal black
+#define COLOR_SURFACE     0x000000  // Keep surfaces flat/black for wireframe look
+#define COLOR_PRIMARY     0x00FF00  // Neon green (highlights)
+#define COLOR_ACCENT      0x00FF00  // Accent also neon green for cohesive matrix look
+#define COLOR_TEXT_PRIMARY 0x00FF00  // Matrix green text
+#define COLOR_TEXT_SECONDARY 0x7B7D7B // Dim gray for secondary text
+#define COLOR_BORDER      0x00FF00  // Green outlines
+#define COLOR_SUCCESS     0x00FF00  // Green
+#define COLOR_ERROR       0xFF0000  // Red
 
 // Typography
 #define FONT_SIZE_SMALL   12

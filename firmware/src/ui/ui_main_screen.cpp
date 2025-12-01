@@ -33,6 +33,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BG_MAIN), 0);
   lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
+  lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
   // Background image (binary format stored on S: driver)
   lv_obj_t* bg_img = lv_img_create(scr);
@@ -44,9 +45,8 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_size(band_top, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_top, 0, 0);
   lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_BG_MAIN), 0);
-  lv_obj_set_style_bg_opa(band_top, LV_OPA_COVER, 0);
-  lv_obj_set_style_border_width(band_top, 1, 0);
-  lv_obj_set_style_border_color(band_top, lv_color_hex(COLOR_BORDER), 0);
+  lv_obj_set_style_bg_opa(band_top, LV_OPA_30, 0);
+  lv_obj_set_style_border_width(band_top, 0, 0);
   lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_top, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(band_top, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -54,7 +54,7 @@ lv_obj_t* ui_create_main_screen(void)
   // WiFi button
   lv_obj_t* btn_wifi = lv_btn_create(band_top);
   lv_obj_set_size(btn_wifi, 40, 30);
-  lv_obj_add_style(btn_wifi, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_style(btn_wifi, ui_get_style_btn_primary(), 0);
   lv_obj_add_event_cb(btn_wifi, on_wifi_btn_click, LV_EVENT_CLICKED, NULL);
 
   lv_obj_t* label_wifi = lv_label_create(btn_wifi);
@@ -66,7 +66,7 @@ lv_obj_t* ui_create_main_screen(void)
   // BLE button
   lv_obj_t* btn_ble = lv_btn_create(band_top);
   lv_obj_set_size(btn_ble, 40, 30);
-  lv_obj_add_style(btn_ble, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_style(btn_ble, ui_get_style_btn_primary(), 0);
   lv_obj_add_event_cb(btn_ble, on_ble_btn_click, LV_EVENT_CLICKED, NULL);
 
   lv_obj_t* label_ble = lv_label_create(btn_ble);
@@ -78,7 +78,7 @@ lv_obj_t* ui_create_main_screen(void)
   // Settings button
   lv_obj_t* btn_settings = lv_btn_create(band_top);
   lv_obj_set_size(btn_settings, 40, 30);
-  lv_obj_add_style(btn_settings, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_style(btn_settings, ui_get_style_btn_primary(), 0);
   lv_obj_add_event_cb(btn_settings, on_settings_btn_click, LV_EVENT_CLICKED, NULL);
 
   lv_obj_t* label_settings = lv_label_create(btn_settings);
@@ -132,9 +132,8 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_size(band_bottom, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_bottom, 0, band_bottom_y);
   lv_obj_set_style_bg_color(band_bottom, lv_color_hex(COLOR_BG_MAIN), 0);
-  lv_obj_set_style_bg_opa(band_bottom, LV_OPA_COVER, 0);
-  lv_obj_set_style_border_width(band_bottom, 1, 0);
-  lv_obj_set_style_border_color(band_bottom, lv_color_hex(COLOR_BORDER), 0);
+  lv_obj_set_style_bg_opa(band_bottom, LV_OPA_30, 0);
+  lv_obj_set_style_border_width(band_bottom, 0, 0);
   lv_obj_set_style_pad_all(band_bottom, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_bottom, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(band_bottom, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -162,7 +161,7 @@ lv_obj_t* ui_create_main_screen(void)
   // Menu button
   lv_obj_t* btn_menu = lv_btn_create(band_bottom);
   lv_obj_set_size(btn_menu, BUTTON_WIDTH, BUTTON_HEIGHT);
-  lv_obj_add_style(btn_menu, ui_get_style_btn_secondary(), 0);
+  lv_obj_add_style(btn_menu, ui_get_style_btn_primary(), 0);
   lv_obj_add_event_cb(btn_menu, on_menu_btn_click, LV_EVENT_CLICKED, NULL);
   
   lv_obj_t* label_menu = lv_label_create(btn_menu);

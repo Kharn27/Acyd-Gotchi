@@ -44,6 +44,8 @@ void ui_set_screen_state_to_main(void);
 void ui_set_screen_state_to_wifi(void);
 void ui_set_screen_state_to_ble(void);
 void ui_set_screen_state_to_settings(void);
+void ui_bottom_button_set(const char* label, lv_event_cb_t handler);
+void ui_bottom_button_restore(void);
 
 #ifdef __cplusplus
 }

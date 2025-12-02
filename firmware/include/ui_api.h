@@ -24,6 +24,13 @@ typedef enum {
 void ui_init(QueueHandle_t ui_queue);
 
 /**
+ * Post an event to the UI event queue (non-blocking).
+ * @param event: event to send
+ * @return true if enqueued, false otherwise
+ */
+bool ui_post_event(ui_event_t event);
+
+/**
  * Display the main screen (pet + button bands).
  * Called after ui_init().
  */

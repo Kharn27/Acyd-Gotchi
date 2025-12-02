@@ -22,18 +22,18 @@ typedef struct {
 /* BLE device result structure */
 typedef struct {
     char name[32];              // Device name (null-terminated)
-    int8_t rssi;                // RSSI signal strength
     uint8_t addr[6];            // BLE MAC address
-    uint8_t addr_len;           // Length of addr (<=6)
+    int8_t rssi;                // RSSI signal strength
+    uint32_t flags;             // Bitmask describing advertisement/properties
 } netsec_ble_device_t;
 
 /* NETSEC result types pushed to netsec_result_queue */
 typedef enum {
     NETSEC_RES_NONE = 0,
-    NETSEC_RES_WIFI_AP,         // WiFi AP found
-    NETSEC_RES_WIFI_SCAN_DONE,  // WiFi scan complete
-    NETSEC_RES_BLE_DEVICE,      // BLE device found
-    NETSEC_RES_BLE_SCAN_DONE,   // BLE scan complete
+    NETSEC_RES_WIFI_AP,          // WiFi AP found
+    NETSEC_RES_WIFI_SCAN_DONE,   // WiFi scan complete
+    NETSEC_RES_BLE_DEVICE_FOUND, // BLE device found
+    NETSEC_RES_BLE_SCAN_DONE,    // BLE scan complete
 } netsec_result_type_t;
 
 /* NETSEC result structure sent via queue */

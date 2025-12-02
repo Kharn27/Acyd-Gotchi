@@ -14,8 +14,11 @@ void netsec_ble_start_scan(uint32_t duration_ms);
 // Stop BLE scan
 void netsec_ble_stop_scan(void);
 
-// Post BLE device found to the result queue
-void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uint8_t addr_len);
+// Maximum number of cached BLE devices per scan cycle
+#define NETSEC_BLE_DEVICE_BUFFER_SIZE 16
+
+// Post BLE device found to the result queue (reuses an internal circular buffer)
+void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uint32_t flags);
 
 #ifdef __cplusplus
 }

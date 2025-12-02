@@ -9,6 +9,8 @@
 
 static BLEScan* s_ble_scan = nullptr;
 static bool s_ble_scan_running = false;
+static netsec_ble_device_t s_ble_devices[NETSEC_BLE_DEVICE_BUFFER_SIZE];
+static size_t s_ble_device_write_idx = 0;
 
 void netsec_ble_start_scan(uint32_t duration_ms)
 {
@@ -46,20 +48,26 @@ void netsec_ble_stop_scan(void)
   s_ble_scan_running = false;
 }
 
-void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uint8_t addr_len)
+void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uint32_t flags)
 {
   extern QueueHandle_t netsec_result_queue;
   if (!netsec_result_queue) return;
 
+  netsec_ble_device_t* device_slot = &s_ble_devices[s_ble_device_write_idx];
+  s_ble_device_write_idx = (s_ble_device_write_idx + 1) % NETSEC_BLE_DEVICE_BUFFER_SIZE;
+
+  memset(device_slot, 0, sizeof(*device_slot));
+  strncpy(device_slot->name, name ? name : "", sizeof(device_slot->name) - 1);
+  if (addr) {
+    memcpy(device_slot->addr, addr, sizeof(device_slot->addr));
+  }
+  device_slot->rssi = static_cast<int8_t>(rssi);
+  device_slot->flags = flags;
+
   netsec_result_t res;
   memset(&res, 0, sizeof(res));
-  res.type = NETSEC_RES_BLE_DEVICE;
-  strncpy(res.data.ble_device.name, name ? name : "", sizeof(res.data.ble_device.name) - 1);
-  res.data.ble_device.rssi = rssi;
-  res.data.ble_device.addr_len = addr_len > sizeof(res.data.ble_device.addr) ? sizeof(res.data.ble_device.addr) : addr_len;
-  if (addr && res.data.ble_device.addr_len) {
-    memcpy(res.data.ble_device.addr, addr, res.data.ble_device.addr_len);
-  }
+  res.type = NETSEC_RES_BLE_DEVICE_FOUND;
+  res.data.ble_device = *device_slot;
 
   xQueueSend(netsec_result_queue, &res, 0);
 }

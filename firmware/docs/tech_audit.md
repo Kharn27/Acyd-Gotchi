@@ -9,15 +9,15 @@
   - Le driver tactile XPT2046 initialise le contrôleur, effectue un mapping des coordonnées et protège l’état via un mutex. 【F:src/drivers/touch_driver.cpp†L17-L83】
 - **PIXEL – UI LVGL** :
   - L’initialisation PIXEL stocke la queue UI puis applique un thème simple avant de créer/charger le main screen. 【F:src/ui_main.cpp†L15-L43】
-  - `ui_task` tourne sur core 1, appelle `lv_timer_handler` toutes les 5 ms et route les événements issus de la queue vers les écrans (main/WiFi/BLE). 【F:src/ui_task.cpp†L17-L55】
-  - Les écrans principaux (main, WiFi, BLE) sont créés et chargés sans warnings LVGL ; ils exposent des boutons fonctionnels qui postent des événements dans la queue UI. 【F:src/ui/ui_main_screen.cpp†L23-L140】【F:src/ui/ui_wifi_screen.cpp†L16-L43】【F:src/ui/ui_ble_screen.cpp†L16-L47】
+  - `ui_task` tourne sur core 1, appelle `lv_timer_handler` toutes les 5 ms et route les événements issus de la queue vers les écrans (main/WiFi/BLE/Settings). 【F:src/ui_task.cpp†L17-L55】
+  - Les écrans principaux (main, WiFi, BLE, Settings) sont créés et chargés sans warnings LVGL ; ils exposent des boutons fonctionnels qui postent des événements dans la queue UI. 【F:src/ui/ui_main_screen.cpp†L23-L140】【F:src/ui/ui_wifi_screen.cpp†L16-L43】【F:src/ui/ui_ble_screen.cpp†L16-L47】【F:src/ui/ui_settings_screen.cpp†L13-L33】
 - **NETSEC – Squelette** :
   - Le module initialise le WiFi en STA, offre des API start/stop pour WiFi/BLE et une boucle `netsec_task` consommant une queue de commandes basiques (opcodes 1–4). 【F:src/netsec_core.cpp†L13-L62】【F:src/netsec_core.cpp†L71-L105】
   - Des callbacks WiFi/BLE existent : scan async WiFi avec publication de résultats dans `netsec_result_queue`, début d’implémentation BLE basé sur `BLEDevice`. 【F:src/netsec/netsec_wifi.cpp†L14-L72】【F:src/netsec/netsec_ble.cpp†L11-L48】
 
 ## Limites / dettes techniques restantes
 
-- **UI/UX** : mise en page basique (fonds unis, polices par défaut LVGL), pas de véritable retour d’état ni d’animations de pet ; les écrans WiFi/BLE n’affichent que des listes factices sans interaction avec les scans. 【F:src/ui/ui_main_screen.cpp†L78-L138】【F:src/ui/ui_wifi_screen.cpp†L29-L41】【F:src/ui/ui_ble_screen.cpp†L29-L41】
+- **UI/UX** : mise en page basique (fonds unis, polices par défaut LVGL), pas de véritable retour d’état ni d’animations de pet ; les écrans WiFi/BLE/Settings n’affichent que des listes factices ou un placeholder sans interaction avec les scans. 【F:src/ui/ui_main_screen.cpp†L78-L138】【F:src/ui/ui_wifi_screen.cpp†L29-L41】【F:src/ui/ui_ble_screen.cpp†L29-L41】【F:src/ui/ui_settings_screen.cpp†L13-L33】
 - **Touch** : calibration statique (bornes `TS_MIN*` génériques) et absence de feedback visuel ou de test long terme sur la stabilité du tick/handler. 【F:include/board_config.h†L31-L44】【F:src/drivers/touch_driver.cpp†L17-L83】
 - **Pipeline UI ↔ NETSEC** : les boutons postent bien des événements, mais aucun mapping n’envoie encore de commandes vers `netsec_command_queue`, et les résultats WiFi/BLE poussés dans la queue ne sont pas consommés par l’UI. 【F:src/ui_task.cpp†L30-L55】【F:src/netsec/netsec_wifi.cpp†L42-L66】【F:src/netsec_core.cpp†L71-L105】
 - **NETSEC** : logique encore très stub (pas de timeout/stop réels de scan WiFi, BLE non connecté aux résultats, handshake capture non implémenté). 【F:src/netsec/netsec_wifi.cpp†L34-L72】【F:src/netsec/netsec_ble.cpp†L32-L48】【F:src/netsec_core.cpp†L50-L68】

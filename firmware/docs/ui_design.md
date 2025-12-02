@@ -29,7 +29,8 @@ The Acyd-Gotchi UI is built with **LVGL 8** on the ESP32-CYD 240x320 color displ
 - **ui_main.cpp**: Module entry, screen creation on-demand
 - **ui_main_screen.cpp**: Main screen layout with pet and buttons
 - **ui_wifi_screen.cpp**: WiFi network list
-- **ui_ble_screen.cpp**: BLE device list + settings
+- **ui_ble_screen.cpp**: BLE device list
+- **ui_settings_screen.cpp**: Settings placeholder screen
 
 ---
 
@@ -130,7 +131,8 @@ firmware/
 │       ├── ui_theme.cpp    # Theme initialization
 │       ├── ui_main_screen.cpp  # Main Tamagotchi screen
 │       ├── ui_wifi_screen.cpp  # WiFi list
-│       └── ui_ble_screen.cpp   # BLE list + settings
+│       ├── ui_ble_screen.cpp   # BLE list
+│       └── ui_settings_screen.cpp # Settings placeholder
 ```
 
 ---

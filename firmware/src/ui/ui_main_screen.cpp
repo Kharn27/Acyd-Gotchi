@@ -286,6 +286,16 @@ static void apply_bottom_button_state(void)
   }
 }
 
+void ui_bottom_button_set(const char* label, lv_event_cb_t handler)
+{
+  update_bottom_button(label ? label : "", handler);
+}
+
+void ui_bottom_button_restore(void)
+{
+  apply_bottom_button_state();
+}
+
 void ui_set_screen_state_to_main(void)
 {
   g_screen_state = UI_SCREEN_STATE_MAIN;

@@ -12,10 +12,18 @@ typedef enum {
     UI_EVENT_BUTTON_WIFI,    // Top bar WiFi button
     UI_EVENT_BUTTON_BLE,     // Top bar BLE button
     UI_EVENT_BUTTON_MENU,    // Bottom bar menu button
+    UI_EVENT_SCAN_START,     // User requested a scan (WiFi/BLE)
+    UI_EVENT_SCAN_DURATION_10S,
+    UI_EVENT_SCAN_DURATION_20S,
+    UI_EVENT_SCAN_DURATION_30S,
+    UI_EVENT_SCAN_CANCEL,    // User canceled a pending scan
+    UI_EVENT_SCAN_FINISHED,  // User acknowledged the end of a scan
     UI_EVENT_SELECT_ENTRY,   // Generic list selection
     UI_EVENT_BACK,           // Back or escape navigation
     UI_EVENT_UPDATE_PET,     // Periodic pet refresh
 } ui_event_t;
+
+typedef void (*ui_event_router_t)(ui_event_t event);
 
 /**
  * Initialize UI module.
@@ -23,6 +31,17 @@ typedef enum {
  * @param ui_queue: queue to post UI events to
  */
 void ui_init(QueueHandle_t ui_queue);
+
+/**
+ * Register a router to be notified of UI events popped by ui_task.
+ * Allows other modules to react without ui_task depending on them.
+ */
+void ui_register_event_router(ui_event_router_t router);
+
+/**
+ * Get the currently registered event router (may be NULL).
+ */
+ui_event_router_t ui_get_event_router(void);
 
 /**
  * Post an event to the UI event queue (non-blocking).

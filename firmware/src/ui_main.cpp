@@ -15,6 +15,7 @@
 #include <freertos/queue.h>
 
 static QueueHandle_t g_ui_queue = NULL;
+static ui_event_router_t g_event_router = NULL;
 static lv_obj_t* g_main_screen = NULL;
 static lv_obj_t* g_wifi_screen = NULL;
 static lv_obj_t* g_ble_screen = NULL;
@@ -25,6 +26,16 @@ void ui_init(QueueHandle_t ui_queue)
 {
   g_ui_queue = ui_queue;
   Serial.println("PIXEL: UI module initialized");
+}
+
+void ui_register_event_router(ui_event_router_t router)
+{
+  g_event_router = router;
+}
+
+ui_event_router_t ui_get_event_router(void)
+{
+  return g_event_router;
 }
 
 bool ui_post_event(ui_event_t event)

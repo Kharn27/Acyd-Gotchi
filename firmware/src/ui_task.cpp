@@ -36,10 +36,15 @@ void ui_task(void * pvParameters)
   while (1) {
     // Process LVGL internal timers and redraw
     lv_timer_handler();
-    
+
     // Handle UI events from queue (non-blocking)
     ui_event_t event;
     if (xQueueReceive(ui_event_queue, &event, 0) == pdTRUE) {
+      ui_event_router_t router = ui_get_event_router();
+      if (router) {
+        router(event);
+      }
+
       // Process UI event
       switch (event) {
         case UI_EVENT_BUTTON_WIFI:
@@ -55,6 +60,24 @@ void ui_task(void * pvParameters)
         case UI_EVENT_BUTTON_MENU:
           Serial.println("UI Event: Menu button pressed");
           ui_show_settings_screen();
+          break;
+
+        case UI_EVENT_SCAN_START:
+          Serial.println("UI Event: Scan start requested");
+          break;
+
+        case UI_EVENT_SCAN_DURATION_10S:
+        case UI_EVENT_SCAN_DURATION_20S:
+        case UI_EVENT_SCAN_DURATION_30S:
+          Serial.println("UI Event: Scan duration selected");
+          break;
+
+        case UI_EVENT_SCAN_CANCEL:
+          Serial.println("UI Event: Scan cancel requested");
+          break;
+
+        case UI_EVENT_SCAN_FINISHED:
+          Serial.println("UI Event: Scan finished acknowledged");
           break;
 
         case UI_EVENT_UPDATE_PET:

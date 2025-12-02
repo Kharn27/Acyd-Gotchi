@@ -31,7 +31,7 @@ lv_obj_t* ui_create_main_screen(void)
 {
   // Create main screen container
   lv_obj_t* scr = lv_obj_create(NULL);
-  lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BG_MAIN), 0);
+  lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
   lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
@@ -45,7 +45,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_t* band_top = lv_obj_create(scr);
   lv_obj_set_size(band_top, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_top, 0, 0);
-  lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_BG_MAIN), 0);
+  lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_SURFACE), 0);
   lv_obj_set_style_bg_opa(band_top, LV_OPA_30, 0);
   lv_obj_set_style_border_width(band_top, 0, 0);
   lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
@@ -62,7 +62,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_text(label_wifi, "WiFi");
   lv_obj_center(label_wifi);
   lv_obj_add_style(label_wifi, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_wifi, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  lv_obj_set_style_text_color(label_wifi, lv_color_hex(COLOR_TEXT), 0);
 
   // BLE button
   lv_obj_t* btn_ble = lv_btn_create(band_top);
@@ -74,7 +74,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_text(label_ble, "BLE");
   lv_obj_center(label_ble);
   lv_obj_add_style(label_ble, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_ble, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  lv_obj_set_style_text_color(label_ble, lv_color_hex(COLOR_TEXT), 0);
   
   // === CENTRAL PET AREA ===
   int pet_start_y = BAND_HEIGHT + PAD_LARGE;
@@ -96,7 +96,7 @@ lv_obj_t* ui_create_main_screen(void)
   static bool label_status_bg_style_inited = false;
   if (!label_status_bg_style_inited) {
     lv_style_init(&label_status_bg_style);
-    lv_style_set_bg_color(&label_status_bg_style, lv_color_hex(0x000000));
+    lv_style_set_bg_color(&label_status_bg_style, lv_color_hex(COLOR_BACKGROUND));
     lv_style_set_bg_opa(&label_status_bg_style, LV_OPA_30);
     lv_style_set_pad_left(&label_status_bg_style, PAD_SMALL);
     lv_style_set_pad_right(&label_status_bg_style, PAD_SMALL);
@@ -112,7 +112,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_long_mode(label_status, LV_LABEL_LONG_WRAP);
   lv_obj_add_style(label_status, ui_get_style_label_normal(), 0);
   lv_obj_add_style(label_status, &label_status_bg_style, 0);
-  lv_obj_set_style_text_color(label_status, lv_color_hex(0x00FF00), 0);
+  lv_obj_set_style_text_color(label_status, lv_color_hex(COLOR_TEXT), 0);
   
   // === BOTTOM BUTTON BAND ===
   int band_bottom_y = LV_VER_RES - BAND_HEIGHT;
@@ -120,7 +120,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_t* band_bottom = lv_obj_create(scr);
   lv_obj_set_size(band_bottom, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_bottom, 0, band_bottom_y);
-  lv_obj_set_style_bg_color(band_bottom, lv_color_hex(COLOR_BG_MAIN), 0);
+  lv_obj_set_style_bg_color(band_bottom, lv_color_hex(COLOR_SURFACE), 0);
   lv_obj_set_style_bg_opa(band_bottom, LV_OPA_30, 0);
   lv_obj_set_style_border_width(band_bottom, 0, 0);
   lv_obj_set_style_pad_all(band_bottom, PAD_SMALL, 0);
@@ -132,7 +132,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_text(g_label_uptime, "UP: 00:00:00");
   lv_label_set_long_mode(g_label_uptime, LV_LABEL_LONG_CLIP);
   lv_obj_add_style(g_label_uptime, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT), 0);
   lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_LEFT, 0);
   lv_obj_set_style_pad_left(g_label_uptime, PAD_SMALL, 0);
   lv_obj_set_width(g_label_uptime, LV_PCT(100));
@@ -149,7 +149,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_text(label_menu, "Menu");
   lv_obj_center(label_menu);
   lv_obj_add_style(label_menu, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_menu, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  lv_obj_set_style_text_color(label_menu, lv_color_hex(COLOR_TEXT), 0);
   
   g_main_screen = scr;
   g_active_screen = scr;

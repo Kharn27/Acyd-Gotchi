@@ -65,7 +65,6 @@ void netsec_task(void* pvParameters) {
     (void)pvParameters;
     Serial.println("[NETSEC] Task started");
     netsec_command_t cmd;
-    bool ble_scan_in_progress = false;
     for (;;) {
         if (xQueueReceive(netsec_command_queue, &cmd, pdMS_TO_TICKS(1000)) == pdTRUE) {
             switch (cmd.type) {
@@ -76,18 +75,15 @@ void netsec_task(void* pvParameters) {
                     netsec_stop_wifi_scan();
                     break;
                 case NETSEC_CMD_BLE_SCAN_START:
-                    if (ble_scan_in_progress) {
+                    if (netsec_ble_is_scanning()) {
                         Serial.println("[NETSEC] BLE scan already running, stopping before restart");
                         netsec_stop_ble_scan();
-                        ble_scan_in_progress = false;
                     }
                     netsec_start_ble_scan(cmd.data.ble_scan_start.duration_ms);
-                    ble_scan_in_progress = true;
                     break;
                 case NETSEC_CMD_BLE_SCAN_STOP:
-                    if (ble_scan_in_progress) {
+                    if (netsec_ble_is_scanning()) {
                         netsec_stop_ble_scan();
-                        ble_scan_in_progress = false;
                     } else {
                         Serial.println("[NETSEC] BLE scan stop requested but no scan active");
                     }

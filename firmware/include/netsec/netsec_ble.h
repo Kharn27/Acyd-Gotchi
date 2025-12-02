@@ -20,6 +20,9 @@ void netsec_ble_stop_scan(void);
 // Post BLE device found to the result queue (reuses an internal circular buffer)
 void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uint32_t flags);
 
+// Check whether a BLE scan task is currently running
+bool netsec_ble_is_scanning(void);
+
 #ifdef __cplusplus
 }
 #endif

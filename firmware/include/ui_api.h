@@ -12,13 +12,12 @@ typedef enum {
     UI_EVENT_BUTTON_WIFI,    // Top bar WiFi button
     UI_EVENT_BUTTON_BLE,     // Top bar BLE button
     UI_EVENT_BUTTON_MENU,    // Bottom bar menu button
-    UI_EVENT_BLE_SCAN_TAP,   // User tapped BLE scan entrypoint
-    UI_EVENT_BLE_SCAN_START, // User confirmed BLE scan start
-    UI_EVENT_SCAN_DURATION_10S,
-    UI_EVENT_SCAN_DURATION_20S,
-    UI_EVENT_SCAN_DURATION_30S,
-    UI_EVENT_SCAN_CANCEL,    // User canceled a pending scan
-    UI_EVENT_SCAN_FINISHED,  // User acknowledged the end of a scan
+    UI_EVENT_BLE_SCAN_REQUEST, // User tapped BLE scan entrypoint
+    UI_EVENT_BLE_DURATION_SELECTED_10S,
+    UI_EVENT_BLE_DURATION_SELECTED_20S,
+    UI_EVENT_BLE_DURATION_SELECTED_30S,
+    UI_EVENT_BLE_CANCEL,     // User canceled a pending scan
+    UI_EVENT_BLE_SCAN_DONE,  // Scan finished notification
     UI_EVENT_SELECT_ENTRY,   // Generic list selection
     UI_EVENT_BACK,           // Back or escape navigation
     UI_EVENT_UPDATE_PET,     // Periodic pet refresh

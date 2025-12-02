@@ -18,6 +18,27 @@
 
 #include <Arduino.h>
 
+typedef enum {
+  BLE_UI_STATE_IDLE = 0,
+  BLE_UI_STATE_CHOOSING_DURATION,
+  BLE_UI_STATE_SCANNING,
+} ble_ui_state_t;
+
+static ble_ui_state_t g_ble_ui_state = BLE_UI_STATE_IDLE;
+
+static void ui_handle_ble_duration_selection(uint32_t duration_s)
+{
+  ui_ble_set_state_scanning(duration_s);
+  g_ble_ui_state = BLE_UI_STATE_SCANNING;
+
+  if (netsec_command_queue) {
+    netsec_command_t cmd = { NETSEC_CMD_NONE };
+    cmd.type = NETSEC_CMD_BLE_SCAN_START;
+    cmd.data.ble_scan_start.duration_ms = duration_s * 1000;
+    xQueueSend(netsec_command_queue, &cmd, 0);
+  }
+}
+
 void ui_task(void * pvParameters)
 {
   (void)pvParameters;
@@ -53,7 +74,7 @@ void ui_task(void * pvParameters)
           ui_ble_handle_device_found(&netsec_res.data.ble_device);
           break;
         case NETSEC_RES_BLE_SCAN_DONE:
-          ui_ble_handle_scan_done();
+          ui_post_event(UI_EVENT_BLE_SCAN_DONE);
           break;
         default:
           break;
@@ -78,6 +99,8 @@ void ui_task(void * pvParameters)
         case UI_EVENT_BUTTON_BLE:
           Serial.println("UI Event: BLE button pressed");
           ui_show_ble_screen();
+          ui_ble_set_state_idle();
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
 
         case UI_EVENT_BUTTON_MENU:
@@ -85,37 +108,41 @@ void ui_task(void * pvParameters)
           ui_show_settings_screen();
           break;
 
-        case UI_EVENT_BLE_SCAN_TAP:
-          Serial.println("UI Event: BLE scan tapped");
+        case UI_EVENT_BLE_SCAN_REQUEST:
+          Serial.println("UI Event: BLE scan request");
+          ui_ble_set_state_choosing_duration();
+          g_ble_ui_state = BLE_UI_STATE_CHOOSING_DURATION;
           break;
 
-        case UI_EVENT_BLE_SCAN_START: {
-          Serial.println("UI Event: BLE scan start requested");
-          if (netsec_command_queue) {
-            netsec_command_t cmd = { NETSEC_CMD_NONE };
-            cmd.type = NETSEC_CMD_BLE_SCAN_START;
-            cmd.data.ble_scan_start.duration_ms = ui_ble_get_last_scan_duration_ms();
-            xQueueSend(netsec_command_queue, &cmd, 0);
-          }
-          break;
-        }
-
-        case UI_EVENT_SCAN_DURATION_10S:
-        case UI_EVENT_SCAN_DURATION_20S:
-        case UI_EVENT_SCAN_DURATION_30S:
-          Serial.println("UI Event: Scan duration selected");
+        case UI_EVENT_BLE_DURATION_SELECTED_10S:
+          Serial.println("UI Event: BLE duration 10s selected");
+          ui_handle_ble_duration_selection(10);
           break;
 
-        case UI_EVENT_SCAN_CANCEL:
-          Serial.println("UI Event: Scan cancel requested");
-          if (netsec_command_queue) {
+        case UI_EVENT_BLE_DURATION_SELECTED_20S:
+          Serial.println("UI Event: BLE duration 20s selected");
+          ui_handle_ble_duration_selection(20);
+          break;
+
+        case UI_EVENT_BLE_DURATION_SELECTED_30S:
+          Serial.println("UI Event: BLE duration 30s selected");
+          ui_handle_ble_duration_selection(30);
+          break;
+
+        case UI_EVENT_BLE_CANCEL:
+          Serial.println("UI Event: BLE scan cancel requested");
+          if (g_ble_ui_state == BLE_UI_STATE_SCANNING && netsec_command_queue) {
             netsec_command_t cmd = { .type = NETSEC_CMD_BLE_SCAN_STOP };
             xQueueSend(netsec_command_queue, &cmd, 0);
           }
+          ui_ble_cancel_scan();
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
 
-        case UI_EVENT_SCAN_FINISHED:
-          Serial.println("UI Event: Scan finished acknowledged");
+        case UI_EVENT_BLE_SCAN_DONE:
+          Serial.println("UI Event: BLE scan done");
+          ui_ble_handle_scan_done();
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
 
         case UI_EVENT_UPDATE_PET:

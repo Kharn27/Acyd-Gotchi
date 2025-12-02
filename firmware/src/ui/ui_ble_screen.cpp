@@ -207,12 +207,51 @@ uint32_t ui_ble_get_last_scan_duration_ms(void)
   return g_last_duration_ms;
 }
 
+void ui_ble_set_state_idle(void)
+{
+  g_scan_active = false;
+  stop_scan_timer();
+  g_scan_remaining_ms = 0;
+  set_top_band_state(TOP_STATE_IDLE);
+}
+
+void ui_ble_set_state_choosing_duration(void)
+{
+  set_top_band_state(TOP_STATE_DURATION);
+  if (g_status_label) {
+    lv_label_set_text(g_status_label, "Choose scan duration.");
+  }
+}
+
+void ui_ble_set_state_scanning(uint32_t duration_s)
+{
+  ui_ble_prepare_for_scan(duration_s);
+  set_top_band_state(TOP_STATE_SCANNING);
+}
+
+void ui_ble_cancel_scan(void)
+{
+  g_scan_active = false;
+  stop_scan_timer();
+  g_scan_remaining_ms = 0;
+  g_has_scanned = false;
+  set_top_band_state(TOP_STATE_IDLE);
+  if (g_ble_scan_button) {
+    lv_obj_clear_state(g_ble_scan_button, LV_STATE_DISABLED);
+  }
+  if (g_status_label) {
+    lv_label_set_text(g_status_label, "Scan canceled.");
+  }
+  refresh_empty_state();
+}
+
 void ui_ble_prepare_for_scan(uint32_t duration_s)
 {
   clear_device_list();
 
   g_scan_active = true;
-  g_scan_remaining_ms = duration_s * 1000;
+  g_last_duration_ms = duration_s * 1000;
+  g_scan_remaining_ms = g_last_duration_ms;
   start_scan_timer(g_scan_remaining_ms);
   update_scan_status_label();
   g_has_scanned = false;
@@ -232,6 +271,7 @@ void ui_ble_handle_scan_done(void)
 {
   g_scan_active = false;
   stop_scan_timer();
+  g_scan_remaining_ms = 0;
   if (g_status_label) {
     lv_label_set_text(g_status_label, "Scan complete.");
   }
@@ -247,32 +287,22 @@ static void on_scan_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: BLE scan button clicked");
-  set_top_band_state(TOP_STATE_DURATION);
-  ui_post_event(UI_EVENT_BLE_SCAN_TAP);
-  if (g_status_label) {
-    lv_label_set_text(g_status_label, "Choose scan duration.");
-  }
+  ui_post_event(UI_EVENT_BLE_SCAN_REQUEST);
 }
 
 static void on_duration_btn_click(lv_event_t* e)
 {
   int duration_s = (int)(intptr_t)lv_event_get_user_data(e);
   Serial.printf("PIXEL: BLE scan %ds requested\n", duration_s);
-
-  g_last_duration_ms = duration_s * 1000;
-  set_top_band_state(TOP_STATE_SCANNING);
-  ui_ble_prepare_for_scan(duration_s);
-
-  ui_post_event(UI_EVENT_BLE_SCAN_START);
   switch (duration_s) {
     case 10:
-      ui_post_event(UI_EVENT_SCAN_DURATION_10S);
+      ui_post_event(UI_EVENT_BLE_DURATION_SELECTED_10S);
       break;
     case 20:
-      ui_post_event(UI_EVENT_SCAN_DURATION_20S);
+      ui_post_event(UI_EVENT_BLE_DURATION_SELECTED_20S);
       break;
     case 30:
-      ui_post_event(UI_EVENT_SCAN_DURATION_30S);
+      ui_post_event(UI_EVENT_BLE_DURATION_SELECTED_30S);
       break;
     default:
       break;
@@ -283,18 +313,7 @@ static void on_cancel_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: BLE scan canceled by user");
-  set_top_band_state(TOP_STATE_IDLE);
-  g_scan_active = false;
-  stop_scan_timer();
-  g_has_scanned = false;
-  if (g_ble_scan_button) {
-    lv_obj_clear_state(g_ble_scan_button, LV_STATE_DISABLED);
-  }
-  if (g_status_label) {
-    lv_label_set_text(g_status_label, "Scan canceled.");
-  }
-  refresh_empty_state();
-  ui_post_event(UI_EVENT_SCAN_CANCEL);
+  ui_post_event(UI_EVENT_BLE_CANCEL);
 }
 
 static void set_top_band_state(top_band_state_t state)
@@ -493,7 +512,9 @@ static void scan_timer_cb(lv_timer_t* timer)
 
   if (g_scan_remaining_ms <= 1000) {
     g_scan_remaining_ms = 0;
-    ui_ble_handle_scan_done();
+    g_scan_active = false;
+    stop_scan_timer();
+    ui_post_event(UI_EVENT_BLE_SCAN_DONE);
     return;
   }
 

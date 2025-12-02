@@ -59,7 +59,7 @@ bool netsec_request_handshake_capture(const netsec_wifi_ap_t* target) {
 }
 
 // netsec_task: simple command processor (start/stop scans)
-// Commands are posted to `netsec_command_queue` as uint32_t opcodes.
+// Commands are posted to `netsec_command_queue` as netsec_command_t structures.
 extern QueueHandle_t netsec_command_queue;
 void netsec_task(void* pvParameters) {
     (void)pvParameters;
@@ -81,7 +81,7 @@ void netsec_task(void* pvParameters) {
                     }
                     netsec_start_ble_scan(cmd.data.ble_scan_start.duration_ms);
                     break;
-                case NETSEC_CMD_BLE_SCAN_STOP:
+                case NETSEC_CMD_BLE_SCAN_CANCEL:
                     if (netsec_ble_is_scanning()) {
                         netsec_stop_ble_scan();
                     } else {

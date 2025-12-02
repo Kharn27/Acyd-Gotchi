@@ -26,6 +26,22 @@ void ui_init(QueueHandle_t ui_queue)
   Serial.println("PIXEL: UI module initialized");
 }
 
+bool ui_post_event(ui_event_t event)
+{
+  if (!g_ui_queue) {
+    Serial.println("PIXEL: UI event queue not initialized");
+    return false;
+  }
+
+  BaseType_t result = xQueueSend(g_ui_queue, &event, 0);
+  if (result != pdTRUE) {
+    Serial.println("PIXEL: Failed to post UI event");
+    return false;
+  }
+
+  return true;
+}
+
 void ui_show_main_screen(void)
 {
   Serial.println("PIXEL: Showing main screen");
@@ -33,15 +49,17 @@ void ui_show_main_screen(void)
   if (!g_main_screen) {
     // Initialize theme first
     ui_theme_init();
-    
+
     // Create main screen
     g_main_screen = ui_create_main_screen();
-    
+
     // Load it
     ui_load_screen(g_main_screen);
   } else {
     ui_load_screen(g_main_screen);
   }
+
+  ui_set_screen_state_to_main();
 }
 
 void ui_show_wifi_screen(void)
@@ -51,7 +69,8 @@ void ui_show_wifi_screen(void)
   if (!g_wifi_screen) {
     g_wifi_screen = ui_create_wifi_screen();
   }
-  
+
+  ui_set_screen_state_to_wifi();
   ui_load_screen(g_wifi_screen);
 }
 
@@ -62,7 +81,8 @@ void ui_show_ble_screen(void)
   if (!g_ble_screen) {
     g_ble_screen = ui_create_ble_screen();
   }
-  
+
+  ui_set_screen_state_to_ble();
   ui_load_screen(g_ble_screen);
 }
 

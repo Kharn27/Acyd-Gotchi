@@ -31,6 +31,11 @@ void ui_load_screen(lv_obj_t* screen);
 // Get current active screen
 lv_obj_t* ui_get_active_screen(void);
 
+// Update bottom button state depending on active screen
+void ui_set_screen_state_to_main(void);
+void ui_set_screen_state_to_wifi(void);
+void ui_set_screen_state_to_ble(void);
+
 #ifdef __cplusplus
 }
 #endif

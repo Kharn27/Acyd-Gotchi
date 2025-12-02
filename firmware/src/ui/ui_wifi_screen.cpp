@@ -17,7 +17,7 @@ static lv_obj_t* g_wifi_screen = NULL;
 lv_obj_t* ui_create_wifi_screen(void)
 {
   lv_obj_t* scr = lv_obj_create(NULL);
-  lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BG_MAIN), 0);
+  lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
   
   // Title
@@ -28,10 +28,10 @@ lv_obj_t* ui_create_wifi_screen(void)
   
   // List container (placeholder)
   lv_obj_t* list = lv_list_create(scr);
-  lv_obj_set_size(list, LV_HOR_RES - 2 * PAD_NORMAL, 
+  lv_obj_set_size(list, LV_HOR_RES - 2 * PAD_NORMAL,
                  LV_VER_RES - 60 - 2 * PAD_LARGE);
   lv_obj_set_pos(list, PAD_NORMAL, PAD_LARGE + 30);
-  lv_obj_set_style_bg_color(list, lv_color_hex(COLOR_BG_DARK), 0);
+  lv_obj_set_style_bg_color(list, lv_color_hex(COLOR_SURFACE), 0);
   
   // Add placeholder entries
   lv_list_add_btn(list, "📶", "Network 1 (scanning...)");

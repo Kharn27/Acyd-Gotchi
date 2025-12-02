@@ -16,6 +16,12 @@
 #include <SPI.h>
 #include <XPT2046_Touchscreen.h>
 
+#define XPT2046_IRQ 36
+#define XPT2046_MOSI 32
+#define XPT2046_MISO 39
+#define XPT2046_CLK  25
+#define XPT2046_CS   33
+
 
 // Touch state machine
 typedef struct {
@@ -26,7 +32,8 @@ typedef struct {
 
 static touch_state_t g_touch_state = {0, 0, false};
 static SemaphoreHandle_t g_touch_mutex = NULL;
-static XPT2046_Touchscreen ts(TOUCH_CS);
+static SPIClass touchscreenSPI = SPIClass(VSPI);
+static XPT2046_Touchscreen ts(XPT2046_CS, XPT2046_IRQ);
 
 // Utility: map function (Arduino-style) with clamping
 static uint16_t map_value(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
@@ -44,8 +51,11 @@ void cyd_touch_init(void)
     }
   }
   
+  // *** IMPORTANT *** : initialiser le SPI du touch sur les bons pins
+  touchscreenSPI.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
+
   // Initialize XPT2046
-  if (!ts.begin()) {
+  if (!ts.begin(touchscreenSPI)) {
     Serial.println("ERROR: XPT2046 touchscreen begin failed");
     return;
   }

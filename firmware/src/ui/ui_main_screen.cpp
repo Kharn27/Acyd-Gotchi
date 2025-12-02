@@ -19,21 +19,35 @@ static lv_obj_t* g_active_screen = NULL;
 static lv_obj_t* g_label_uptime = NULL;
 static lv_obj_t* g_bg_img = NULL;
 static uint8_t g_bg_index = 1;
+static lv_obj_t* g_bottom_band = NULL;
+static lv_obj_t* g_bottom_button = NULL;
+static lv_obj_t* g_bottom_button_label = NULL;
+
+enum active_screen_state {
+  UI_SCREEN_STATE_MAIN,
+  UI_SCREEN_STATE_WIFI,
+  UI_SCREEN_STATE_BLE,
+};
+
+static active_screen_state g_screen_state = UI_SCREEN_STATE_MAIN;
+static lv_event_cb_t g_bottom_button_handler = NULL;
 
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
 static void on_ble_btn_click(lv_event_t* e);
-static void on_settings_btn_click(lv_event_t* e);
-static void on_ok_btn_click(lv_event_t* e);
 static void on_menu_btn_click(lv_event_t* e);
+static void on_back_btn_click(lv_event_t* e);
 static void update_uptime_cb(lv_timer_t* timer);
 static void wallpaper_timer_cb(lv_timer_t* timer);
+static void update_bottom_button(const char* label, lv_event_cb_t handler);
+static void dispatch_bottom_button(lv_event_t* e);
+static void apply_bottom_button_state(void);
 
 lv_obj_t* ui_create_main_screen(void)
 {
   // Create main screen container
   lv_obj_t* scr = lv_obj_create(NULL);
-  lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BG_MAIN), 0);
+  lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
   lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
@@ -47,12 +61,12 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_t* band_top = lv_obj_create(scr);
   lv_obj_set_size(band_top, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_top, 0, 0);
-  lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_BG_MAIN), 0);
+  lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_SURFACE), 0);
   lv_obj_set_style_bg_opa(band_top, LV_OPA_30, 0);
   lv_obj_set_style_border_width(band_top, 0, 0);
   lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_top, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(band_top, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_flex_align(band_top, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   
   // WiFi button
   lv_obj_t* btn_wifi = lv_btn_create(band_top);
@@ -64,7 +78,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_text(label_wifi, "WiFi");
   lv_obj_center(label_wifi);
   lv_obj_add_style(label_wifi, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_wifi, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  lv_obj_set_style_text_color(label_wifi, lv_color_hex(COLOR_TEXT), 0);
 
   // BLE button
   lv_obj_t* btn_ble = lv_btn_create(band_top);
@@ -76,19 +90,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_text(label_ble, "BLE");
   lv_obj_center(label_ble);
   lv_obj_add_style(label_ble, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_ble, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
-
-  // Settings button
-  lv_obj_t* btn_settings = lv_btn_create(band_top);
-  lv_obj_set_size(btn_settings, 40, 30);
-  lv_obj_add_style(btn_settings, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_settings, on_settings_btn_click, LV_EVENT_CLICKED, NULL);
-
-  lv_obj_t* label_settings = lv_label_create(btn_settings);
-  lv_label_set_text(label_settings, LV_SYMBOL_SETTINGS);
-  lv_obj_center(label_settings);
-  lv_obj_add_style(label_settings, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_settings, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  lv_obj_set_style_text_color(label_ble, lv_color_hex(COLOR_TEXT), 0);
   
   // === CENTRAL PET AREA ===
   int pet_start_y = BAND_HEIGHT + PAD_LARGE;
@@ -110,7 +112,7 @@ lv_obj_t* ui_create_main_screen(void)
   static bool label_status_bg_style_inited = false;
   if (!label_status_bg_style_inited) {
     lv_style_init(&label_status_bg_style);
-    lv_style_set_bg_color(&label_status_bg_style, lv_color_hex(0x000000));
+    lv_style_set_bg_color(&label_status_bg_style, lv_color_hex(COLOR_BACKGROUND));
     lv_style_set_bg_opa(&label_status_bg_style, LV_OPA_30);
     lv_style_set_pad_left(&label_status_bg_style, PAD_SMALL);
     lv_style_set_pad_right(&label_status_bg_style, PAD_SMALL);
@@ -126,52 +128,44 @@ lv_obj_t* ui_create_main_screen(void)
   lv_label_set_long_mode(label_status, LV_LABEL_LONG_WRAP);
   lv_obj_add_style(label_status, ui_get_style_label_normal(), 0);
   lv_obj_add_style(label_status, &label_status_bg_style, 0);
-  lv_obj_set_style_text_color(label_status, lv_color_hex(0x00FF00), 0);
+  lv_obj_set_style_text_color(label_status, lv_color_hex(COLOR_TEXT), 0);
   
   // === BOTTOM BUTTON BAND ===
   int band_bottom_y = LV_VER_RES - BAND_HEIGHT;
   
-  lv_obj_t* band_bottom = lv_obj_create(scr);
-  lv_obj_set_size(band_bottom, LV_HOR_RES, BAND_HEIGHT);
-  lv_obj_set_pos(band_bottom, 0, band_bottom_y);
-  lv_obj_set_style_bg_color(band_bottom, lv_color_hex(COLOR_BG_MAIN), 0);
-  lv_obj_set_style_bg_opa(band_bottom, LV_OPA_30, 0);
-  lv_obj_set_style_border_width(band_bottom, 0, 0);
-  lv_obj_set_style_pad_all(band_bottom, PAD_SMALL, 0);
-  lv_obj_set_flex_flow(band_bottom, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(band_bottom, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  
-  // OK button
-  lv_obj_t* btn_ok = lv_btn_create(band_bottom);
-  lv_obj_set_size(btn_ok, BUTTON_WIDTH, BUTTON_HEIGHT);
-  lv_obj_add_style(btn_ok, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_ok, on_ok_btn_click, LV_EVENT_CLICKED, NULL);
-
-  lv_obj_t* label_ok = lv_label_create(btn_ok);
-  lv_label_set_text(label_ok, "OK");
-  lv_obj_center(label_ok);
-  lv_obj_add_style(label_ok, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_ok, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  g_bottom_band = lv_obj_create(lv_layer_top());
+  lv_obj_set_size(g_bottom_band, LV_HOR_RES, BAND_HEIGHT);
+  lv_obj_set_pos(g_bottom_band, 0, band_bottom_y);
+  lv_obj_set_style_bg_color(g_bottom_band, lv_color_hex(COLOR_SURFACE), 0);
+  lv_obj_set_style_bg_opa(g_bottom_band, LV_OPA_30, 0);
+  lv_obj_set_style_border_width(g_bottom_band, 0, 0);
+  lv_obj_set_style_pad_all(g_bottom_band, PAD_SMALL, 0);
+  lv_obj_set_flex_flow(g_bottom_band, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(g_bottom_band, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
   // Uptime label
-  g_label_uptime = lv_label_create(band_bottom);
+  g_label_uptime = lv_label_create(g_bottom_band);
   lv_label_set_text(g_label_uptime, "UP: 00:00:00");
+  lv_label_set_long_mode(g_label_uptime, LV_LABEL_LONG_CLIP);
   lv_obj_add_style(g_label_uptime, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
-  lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_center(g_label_uptime);
+  lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT), 0);
+  lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_LEFT, 0);
+  lv_obj_set_style_pad_left(g_label_uptime, PAD_SMALL, 0);
+  lv_obj_set_width(g_label_uptime, LV_PCT(100));
+  lv_obj_set_flex_grow(g_label_uptime, 2);
 
   // Menu button
-  lv_obj_t* btn_menu = lv_btn_create(band_bottom);
-  lv_obj_set_size(btn_menu, BUTTON_WIDTH, BUTTON_HEIGHT);
-  lv_obj_add_style(btn_menu, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(btn_menu, on_menu_btn_click, LV_EVENT_CLICKED, NULL);
-  
-  lv_obj_t* label_menu = lv_label_create(btn_menu);
-  lv_label_set_text(label_menu, "Menu");
-  lv_obj_center(label_menu);
-  lv_obj_add_style(label_menu, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_menu, lv_color_hex(COLOR_TEXT_PRIMARY), 0);
+  g_bottom_button = lv_btn_create(g_bottom_band);
+  lv_obj_set_size(g_bottom_button, BUTTON_WIDTH, BUTTON_HEIGHT);
+  lv_obj_add_style(g_bottom_button, ui_get_style_btn_primary(), 0);
+  lv_obj_add_event_cb(g_bottom_button, dispatch_bottom_button, LV_EVENT_CLICKED, NULL);
+  lv_obj_set_flex_grow(g_bottom_button, 1);
+
+  g_bottom_button_label = lv_label_create(g_bottom_button);
+  lv_obj_center(g_bottom_button_label);
+  lv_obj_add_style(g_bottom_button_label, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(g_bottom_button_label, lv_color_hex(COLOR_TEXT), 0);
+  update_bottom_button("Menu", on_menu_btn_click);
   
   g_main_screen = scr;
   g_active_screen = scr;
@@ -188,43 +182,27 @@ static void on_wifi_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: WiFi button clicked");
-  
-  // Post UI event to queue (if available)
-  extern QueueHandle_t ui_event_queue;
-  if (ui_event_queue) {
-    ui_event_t event = UI_EVENT_BUTTON_WIFI;
-    xQueueSend(ui_event_queue, &event, 0);
-  }
+  ui_post_event(UI_EVENT_BUTTON_WIFI);
 }
 
 static void on_ble_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: BLE button clicked");
-  
-  extern QueueHandle_t ui_event_queue;
-  if (ui_event_queue) {
-    ui_event_t event = UI_EVENT_BUTTON_BLE;
-    xQueueSend(ui_event_queue, &event, 0);
-  }
-}
-
-static void on_settings_btn_click(lv_event_t* e)
-{
-  (void)e;
-  Serial.println("PIXEL: Settings button clicked");
-}
-
-static void on_ok_btn_click(lv_event_t* e)
-{
-  (void)e;
-  Serial.println("PIXEL: OK button clicked");
+  ui_post_event(UI_EVENT_BUTTON_BLE);
 }
 
 static void on_menu_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: Menu button clicked");
+}
+
+static void on_back_btn_click(lv_event_t* e)
+{
+  (void)e;
+  Serial.println("PIXEL: Back button clicked");
+  ui_show_main_screen();
 }
 
 static void update_uptime_cb(lv_timer_t* timer)
@@ -275,5 +253,51 @@ void ui_load_screen(lv_obj_t* screen)
 lv_obj_t* ui_get_active_screen(void)
 {
   return g_active_screen;
+}
+
+static void update_bottom_button(const char* label, lv_event_cb_t handler)
+{
+  if (!g_bottom_button_label) return;
+
+  lv_label_set_text(g_bottom_button_label, label);
+  g_bottom_button_handler = handler;
+}
+
+static void dispatch_bottom_button(lv_event_t* e)
+{
+  if (g_bottom_button_handler) {
+    g_bottom_button_handler(e);
+  }
+}
+
+static void apply_bottom_button_state(void)
+{
+  switch (g_screen_state) {
+    case UI_SCREEN_STATE_MAIN:
+      update_bottom_button("Menu", on_menu_btn_click);
+      break;
+    case UI_SCREEN_STATE_WIFI:
+    case UI_SCREEN_STATE_BLE:
+      update_bottom_button("Back", on_back_btn_click);
+      break;
+  }
+}
+
+void ui_set_screen_state_to_main(void)
+{
+  g_screen_state = UI_SCREEN_STATE_MAIN;
+  apply_bottom_button_state();
+}
+
+void ui_set_screen_state_to_wifi(void)
+{
+  g_screen_state = UI_SCREEN_STATE_WIFI;
+  apply_bottom_button_state();
+}
+
+void ui_set_screen_state_to_ble(void)
+{
+  g_screen_state = UI_SCREEN_STATE_BLE;
+  apply_bottom_button_state();
 }
 

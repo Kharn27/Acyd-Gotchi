@@ -20,13 +20,14 @@ static uint16_t s_ble_devices_reported = 0;
 
 #if defined(ARDUINO_ARCH_ESP32)
 class NetsecBLEAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
-  void onResult(BLEAdvertisedDevice* device) override {
-    std::string name = device->haveName() ? device->getName() : std::string("");
+  void onResult(BLEAdvertisedDevice advertisedDevice) override {
+    std::string name = advertisedDevice.haveName() ? advertisedDevice.getName() : std::string("");
+    uint32_t flags = static_cast<uint32_t>(advertisedDevice.getAddressType());
     netsec_ble_post_device(
         name.c_str(),
-        device->getRSSI(),
-        reinterpret_cast<const uint8_t*>(device->getAddress().getNative()),
-        device->getAdvType());
+        advertisedDevice.getRSSI(),
+        reinterpret_cast<const uint8_t*>(advertisedDevice.getAddress().getNative()),
+        flags);
   }
 };
 #endif

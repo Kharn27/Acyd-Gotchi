@@ -92,7 +92,7 @@ void ui_task(void * pvParameters)
         case UI_EVENT_BLE_SCAN_START: {
           Serial.println("UI Event: BLE scan start requested");
           if (netsec_command_queue) {
-            netsec_command_t cmd = {0};
+            netsec_command_t cmd = { NETSEC_CMD_NONE };
             cmd.type = NETSEC_CMD_BLE_SCAN_START;
             cmd.data.ble_scan_start.duration_ms = ui_ble_get_last_scan_duration_ms();
             xQueueSend(netsec_command_queue, &cmd, 0);

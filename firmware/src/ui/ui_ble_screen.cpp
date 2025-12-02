@@ -10,6 +10,7 @@
 #include "ui_theme.h"
 #include "ui_api.h"
 #include "netsec_api.h"
+#include "netsec/netsec_ble.h"
 #include "lvgl.h"
 
 #include <Arduino.h>

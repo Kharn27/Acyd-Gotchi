@@ -21,6 +21,7 @@ lv_obj_t* ui_create_wifi_screen(void);
 
 // Create BLE scan results screen
 lv_obj_t* ui_create_ble_screen(void);
+lv_obj_t* ui_ble_get_scan_button(void);
 
 // Create settings screen (placeholder)
 lv_obj_t* ui_create_settings_screen(void);

@@ -8,6 +8,7 @@
 
 #include "ui_screens.h"
 #include "ui_theme.h"
+#include "ui_api.h"
 #include "lvgl.h"
 
 #include <Arduino.h>
@@ -21,9 +22,12 @@ static lv_obj_t* g_idle_container = NULL;
 static lv_obj_t* g_device_list = NULL;
 static lv_obj_t* g_empty_label = NULL;
 static lv_obj_t* g_status_label = NULL;
+static lv_obj_t* g_finish_button = NULL;
 
 static void on_scan_btn_click(lv_event_t* e);
 static void on_duration_btn_click(lv_event_t* e);
+static void on_cancel_btn_click(lv_event_t* e);
+static void on_finish_btn_click(lv_event_t* e);
 static void show_duration_choices(bool show);
 static void clear_device_list(void);
 static void add_device_row(const char* name, const char* mac, int rssi);
@@ -101,6 +105,17 @@ lv_obj_t* ui_create_ble_screen(void)
     lv_obj_set_style_text_color(label, lv_color_hex(COLOR_TEXT), 0);
   }
 
+  lv_obj_t* cancel_btn = lv_btn_create(g_duration_container);
+  lv_obj_set_size(cancel_btn, BUTTON_WIDTH, BUTTON_HEIGHT);
+  lv_obj_add_style(cancel_btn, ui_get_style_btn_primary(), 0);
+  lv_obj_add_event_cb(cancel_btn, on_cancel_btn_click, LV_EVENT_CLICKED, NULL);
+
+  lv_obj_t* cancel_label = lv_label_create(cancel_btn);
+  lv_label_set_text(cancel_label, "CANCEL");
+  lv_obj_center(cancel_label);
+  lv_obj_add_style(cancel_label, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(cancel_label, lv_color_hex(COLOR_TEXT), 0);
+
   // Title for list
   lv_obj_t* list_title = lv_label_create(scr);
   lv_label_set_text(list_title, "BLE Devices");
@@ -136,6 +151,18 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_style_text_color(g_status_label, lv_color_hex(COLOR_TEXT), 0);
   lv_obj_set_pos(g_status_label, PAD_NORMAL, LV_VER_RES - PAD_LARGE);
 
+  g_finish_button = lv_btn_create(scr);
+  lv_obj_set_size(g_finish_button, BUTTON_WIDTH, BUTTON_HEIGHT);
+  lv_obj_add_style(g_finish_button, ui_get_style_btn_primary(), 0);
+  lv_obj_add_event_cb(g_finish_button, on_finish_btn_click, LV_EVENT_CLICKED, NULL);
+  lv_obj_set_pos(g_finish_button, LV_HOR_RES - BUTTON_WIDTH - PAD_NORMAL, LV_VER_RES - BAND_HEIGHT - BUTTON_HEIGHT);
+
+  lv_obj_t* finish_label = lv_label_create(g_finish_button);
+  lv_label_set_text(finish_label, "FINISH");
+  lv_obj_center(finish_label);
+  lv_obj_add_style(finish_label, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(finish_label, lv_color_hex(COLOR_TEXT), 0);
+
   g_ble_screen = scr;
   refresh_empty_state();
   Serial.println("PIXEL: BLE screen created");
@@ -152,6 +179,7 @@ static void on_scan_btn_click(lv_event_t* e)
   (void)e;
   Serial.println("PIXEL: BLE scan button clicked");
   show_duration_choices(true);
+  ui_post_event(UI_EVENT_SCAN_START);
   if (g_status_label) {
     lv_label_set_text(g_status_label, "Choose scan duration.");
   }
@@ -173,6 +201,38 @@ static void on_duration_btn_click(lv_event_t* e)
   if (g_status_label) {
     lv_label_set_text_fmt(g_status_label, "Scanning for %d s...", duration_s);
   }
+
+  switch (duration_s) {
+    case 10:
+      ui_post_event(UI_EVENT_SCAN_DURATION_10S);
+      break;
+    case 20:
+      ui_post_event(UI_EVENT_SCAN_DURATION_20S);
+      break;
+    case 30:
+      ui_post_event(UI_EVENT_SCAN_DURATION_30S);
+      break;
+    default:
+      break;
+  }
+}
+
+static void on_cancel_btn_click(lv_event_t* e)
+{
+  (void)e;
+  Serial.println("PIXEL: BLE scan canceled by user");
+  show_duration_choices(false);
+  if (g_status_label) {
+    lv_label_set_text(g_status_label, "Scan canceled.");
+  }
+  ui_post_event(UI_EVENT_SCAN_CANCEL);
+}
+
+static void on_finish_btn_click(lv_event_t* e)
+{
+  (void)e;
+  Serial.println("PIXEL: BLE scan finished acknowledgment");
+  ui_post_event(UI_EVENT_SCAN_FINISHED);
 }
 
 static void show_duration_choices(bool show)

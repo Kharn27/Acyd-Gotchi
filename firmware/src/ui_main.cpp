@@ -26,6 +26,22 @@ void ui_init(QueueHandle_t ui_queue)
   Serial.println("PIXEL: UI module initialized");
 }
 
+bool ui_post_event(ui_event_t event)
+{
+  if (!g_ui_queue) {
+    Serial.println("PIXEL: UI event queue not initialized");
+    return false;
+  }
+
+  BaseType_t result = xQueueSend(g_ui_queue, &event, 0);
+  if (result != pdTRUE) {
+    Serial.println("PIXEL: Failed to post UI event");
+    return false;
+  }
+
+  return true;
+}
+
 void ui_show_main_screen(void)
 {
   Serial.println("PIXEL: Showing main screen");

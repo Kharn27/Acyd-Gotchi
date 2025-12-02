@@ -166,14 +166,14 @@ static void on_wifi_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: WiFi button clicked");
-  ui_show_wifi_screen();
+  ui_post_event(UI_EVENT_BUTTON_WIFI);
 }
 
 static void on_ble_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: BLE button clicked");
-  ui_show_ble_screen();
+  ui_post_event(UI_EVENT_BUTTON_BLE);
 }
 
 static void on_menu_btn_click(lv_event_t* e)

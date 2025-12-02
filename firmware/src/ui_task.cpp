@@ -52,6 +52,11 @@ void ui_task(void * pvParameters)
           ui_show_ble_screen();
           break;
 
+        case UI_EVENT_BUTTON_MENU:
+          Serial.println("UI Event: Menu button pressed");
+          ui_show_settings_screen();
+          break;
+
         case UI_EVENT_UPDATE_PET:
           Serial.println("UI Event: Update pet");
           // Pet state updated, LVGL will redraw on next cycle

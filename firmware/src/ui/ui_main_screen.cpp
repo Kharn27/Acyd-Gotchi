@@ -27,6 +27,7 @@ enum active_screen_state {
   UI_SCREEN_STATE_MAIN,
   UI_SCREEN_STATE_WIFI,
   UI_SCREEN_STATE_BLE,
+  UI_SCREEN_STATE_SETTINGS,
 };
 
 static active_screen_state g_screen_state = UI_SCREEN_STATE_MAIN;
@@ -196,6 +197,7 @@ static void on_menu_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: Menu button clicked");
+  ui_post_event(UI_EVENT_BUTTON_MENU);
 }
 
 static void on_back_btn_click(lv_event_t* e)
@@ -278,6 +280,7 @@ static void apply_bottom_button_state(void)
       break;
     case UI_SCREEN_STATE_WIFI:
     case UI_SCREEN_STATE_BLE:
+    case UI_SCREEN_STATE_SETTINGS:
       update_bottom_button("Back", on_back_btn_click);
       break;
   }
@@ -298,6 +301,12 @@ void ui_set_screen_state_to_wifi(void)
 void ui_set_screen_state_to_ble(void)
 {
   g_screen_state = UI_SCREEN_STATE_BLE;
+  apply_bottom_button_state();
+}
+
+void ui_set_screen_state_to_settings(void)
+{
+  g_screen_state = UI_SCREEN_STATE_SETTINGS;
   apply_bottom_button_state();
 }
 

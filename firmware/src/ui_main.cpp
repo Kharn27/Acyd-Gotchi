@@ -18,6 +18,7 @@ static QueueHandle_t g_ui_queue = NULL;
 static lv_obj_t* g_main_screen = NULL;
 static lv_obj_t* g_wifi_screen = NULL;
 static lv_obj_t* g_ble_screen = NULL;
+static lv_obj_t* g_settings_screen = NULL;
 
 // Implementation of ui_api.h functions
 void ui_init(QueueHandle_t ui_queue)
@@ -84,6 +85,18 @@ void ui_show_ble_screen(void)
 
   ui_set_screen_state_to_ble();
   ui_load_screen(g_ble_screen);
+}
+
+void ui_show_settings_screen(void)
+{
+  Serial.println("PIXEL: Showing Settings screen");
+
+  if (!g_settings_screen) {
+    g_settings_screen = ui_create_settings_screen();
+  }
+
+  ui_set_screen_state_to_settings();
+  ui_load_screen(g_settings_screen);
 }
 
 void ui_update_pet(uint32_t delta_ms)

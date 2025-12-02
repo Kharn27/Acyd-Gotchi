@@ -11,6 +11,7 @@ typedef enum {
     UI_EVENT_NONE = 0,
     UI_EVENT_BUTTON_WIFI,    // Top bar WiFi button
     UI_EVENT_BUTTON_BLE,     // Top bar BLE button
+    UI_EVENT_BUTTON_MENU,    // Bottom bar menu button
     UI_EVENT_SELECT_ENTRY,   // Generic list selection
     UI_EVENT_BACK,           // Back or escape navigation
     UI_EVENT_UPDATE_PET,     // Periodic pet refresh
@@ -47,6 +48,12 @@ void ui_show_wifi_screen(void);
  * Called when user taps Bluetooth button.
  */
 void ui_show_ble_screen(void);
+
+/**
+ * Display the Settings screen.
+ * Called when user taps Menu.
+ */
+void ui_show_settings_screen(void);
 
 /**
  * Update the pet animation (called periodically from ui_task).

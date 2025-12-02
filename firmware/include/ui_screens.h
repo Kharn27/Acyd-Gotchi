@@ -36,6 +36,7 @@ lv_obj_t* ui_get_active_screen(void);
 void ui_set_screen_state_to_main(void);
 void ui_set_screen_state_to_wifi(void);
 void ui_set_screen_state_to_ble(void);
+void ui_set_screen_state_to_settings(void);
 
 #ifdef __cplusplus
 }

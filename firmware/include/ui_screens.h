@@ -8,6 +8,7 @@
 #define UI_SCREENS_H
 
 #include "lvgl.h"
+#include "netsec_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,9 @@ lv_obj_t* ui_create_wifi_screen(void);
 // Create BLE scan results screen
 lv_obj_t* ui_create_ble_screen(void);
 lv_obj_t* ui_ble_get_scan_button(void);
+void ui_ble_prepare_for_scan(uint32_t duration_s);
+void ui_ble_handle_device_found(const netsec_ble_device_t* device);
+void ui_ble_handle_scan_done(void);
 
 // Create settings screen (placeholder)
 lv_obj_t* ui_create_settings_screen(void);

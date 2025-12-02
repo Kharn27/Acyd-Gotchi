@@ -8,11 +8,17 @@
 #endif
 
 static BLEScan* s_ble_scan = nullptr;
+static bool s_ble_scan_running = false;
 
-void netsec_ble_start_scan(void)
+void netsec_ble_start_scan(uint32_t duration_ms)
 {
   Serial.println("[NETSEC:BLE] Starting BLE scan");
 #if defined(ARDUINO_ARCH_ESP32)
+  if (s_ble_scan_running) {
+    Serial.println("[NETSEC:BLE] Scan already running, restarting");
+    netsec_ble_stop_scan();
+  }
+
   if (!s_ble_scan) {
     BLEDevice::init("");
     s_ble_scan = BLEDevice::getScan();
@@ -20,9 +26,12 @@ void netsec_ble_start_scan(void)
     s_ble_scan->setInterval(100);
     s_ble_scan->setWindow(99);
   }
-  // Start scan asynchronously for 5 seconds and register callback via results (blocking call returns results)
-  // We use start(5, false) to run non-blocking on ESP32 BLE stack
-  s_ble_scan->start(5, false);
+  uint32_t duration_s = (duration_ms + 999) / 1000;
+  if (duration_s == 0) {
+    duration_s = 1;
+  }
+  s_ble_scan_running = true;
+  s_ble_scan->start(duration_s, false);
 #else
   Serial.println("[NETSEC:BLE] BLE not supported on this platform (mock)");
 #endif
@@ -34,6 +43,7 @@ void netsec_ble_stop_scan(void)
 #if defined(ARDUINO_ARCH_ESP32)
   if (s_ble_scan) s_ble_scan->stop();
 #endif
+  s_ble_scan_running = false;
 }
 
 void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uint8_t addr_len)

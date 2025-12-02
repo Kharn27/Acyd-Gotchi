@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 // Start asynchronous BLE scan
-void netsec_ble_start_scan(void);
+void netsec_ble_start_scan(uint32_t duration_ms);
 
 // Stop BLE scan
 void netsec_ble_stop_scan(void);

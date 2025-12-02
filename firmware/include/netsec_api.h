@@ -45,6 +45,23 @@ typedef struct {
     } data;
 } netsec_result_t;
 
+typedef enum {
+    NETSEC_CMD_NONE = 0,
+    NETSEC_CMD_WIFI_SCAN_START,
+    NETSEC_CMD_WIFI_SCAN_STOP,
+    NETSEC_CMD_BLE_SCAN_START,
+    NETSEC_CMD_BLE_SCAN_STOP,
+} netsec_command_type_t;
+
+typedef struct {
+    netsec_command_type_t type;
+    union {
+        struct {
+            uint32_t duration_ms;
+        } ble_scan_start;
+    } data;
+} netsec_command_t;
+
 /**
  * Initialize NETSEC module.
  * @param result_queue: queue to push scan results to
@@ -66,7 +83,7 @@ void netsec_stop_wifi_scan(void);
  * Start a BLE scan (non-blocking).
  * Results are sent to netsec_result_queue.
  */
-void netsec_start_ble_scan(void);
+void netsec_start_ble_scan(uint32_t duration_ms);
 
 /**
  * Stop an ongoing BLE scan.

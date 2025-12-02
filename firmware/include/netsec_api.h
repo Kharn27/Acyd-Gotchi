@@ -59,6 +59,7 @@ typedef enum {
     NETSEC_CMD_WIFI_SCAN_STOP,
     NETSEC_CMD_BLE_SCAN_START,
     NETSEC_CMD_BLE_SCAN_STOP,
+    NETSEC_CMD_BLE_SCAN_CANCEL = NETSEC_CMD_BLE_SCAN_STOP, // Alias for compatibility
 } netsec_command_type_t;
 
 typedef struct {
@@ -66,7 +67,7 @@ typedef struct {
     union {
         struct {
             uint32_t duration_ms;
-        } ble_scan_start;
+        } ble_scan_start; // Duration for NETSEC_CMD_BLE_SCAN_START
     } data;
 } netsec_command_t;
 

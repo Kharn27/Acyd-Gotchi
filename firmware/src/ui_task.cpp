@@ -132,7 +132,7 @@ void ui_task(void * pvParameters)
         case UI_EVENT_BLE_CANCEL:
           Serial.println("UI Event: BLE scan cancel requested");
           if (g_ble_ui_state == BLE_UI_STATE_SCANNING && netsec_command_queue) {
-            netsec_command_t cmd = { .type = NETSEC_CMD_BLE_SCAN_STOP };
+            netsec_command_t cmd = { .type = NETSEC_CMD_BLE_SCAN_CANCEL };
             xQueueSend(netsec_command_queue, &cmd, 0);
           }
           ui_ble_cancel_scan();

@@ -43,6 +43,12 @@ void ui_task(void * pvParameters)
     netsec_result_t netsec_res;
     while (xQueueReceive(netsec_result_queue, &netsec_res, 0) == pdTRUE) {
       switch (netsec_res.type) {
+        case NETSEC_RES_WIFI_AP:
+          ui_wifi_handle_ap_found(&netsec_res.data.wifi_ap);
+          break;
+        case NETSEC_RES_WIFI_SCAN_DONE:
+          ui_wifi_handle_scan_done();
+          break;
         case NETSEC_RES_BLE_DEVICE_FOUND:
           ui_ble_handle_device_found(&netsec_res.data.ble_device);
           break;
@@ -79,9 +85,20 @@ void ui_task(void * pvParameters)
           ui_show_settings_screen();
           break;
 
-        case UI_EVENT_SCAN_START:
-          Serial.println("UI Event: Scan start requested");
+        case UI_EVENT_BLE_SCAN_TAP:
+          Serial.println("UI Event: BLE scan tapped");
           break;
+
+        case UI_EVENT_BLE_SCAN_START: {
+          Serial.println("UI Event: BLE scan start requested");
+          if (netsec_command_queue) {
+            netsec_command_t cmd = {0};
+            cmd.type = NETSEC_CMD_BLE_SCAN_START;
+            cmd.data.ble_scan_start.duration_ms = ui_ble_get_last_scan_duration_ms();
+            xQueueSend(netsec_command_queue, &cmd, 0);
+          }
+          break;
+        }
 
         case UI_EVENT_SCAN_DURATION_10S:
         case UI_EVENT_SCAN_DURATION_20S:
@@ -91,6 +108,10 @@ void ui_task(void * pvParameters)
 
         case UI_EVENT_SCAN_CANCEL:
           Serial.println("UI Event: Scan cancel requested");
+          if (netsec_command_queue) {
+            netsec_command_t cmd = { .type = NETSEC_CMD_BLE_SCAN_STOP };
+            xQueueSend(netsec_command_queue, &cmd, 0);
+          }
           break;
 
         case UI_EVENT_SCAN_FINISHED:

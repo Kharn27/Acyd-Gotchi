@@ -19,6 +19,8 @@ lv_obj_t* ui_create_main_screen(void);
 
 // Create WiFi scan results screen
 lv_obj_t* ui_create_wifi_screen(void);
+void ui_wifi_handle_ap_found(const netsec_wifi_ap_t* ap);
+void ui_wifi_handle_scan_done(void);
 
 // Create BLE scan results screen
 lv_obj_t* ui_create_ble_screen(void);
@@ -26,6 +28,7 @@ lv_obj_t* ui_ble_get_scan_button(void);
 void ui_ble_prepare_for_scan(uint32_t duration_s);
 void ui_ble_handle_device_found(const netsec_ble_device_t* device);
 void ui_ble_handle_scan_done(void);
+uint32_t ui_ble_get_last_scan_duration_ms(void);
 
 // Create settings screen (placeholder)
 lv_obj_t* ui_create_settings_screen(void);

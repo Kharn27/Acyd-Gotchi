@@ -27,6 +27,13 @@ typedef struct {
     uint32_t flags;             // Bitmask describing advertisement/properties
 } netsec_ble_device_t;
 
+/* Scan completion metadata shared across WiFi/BLE */
+typedef struct {
+    uint16_t item_count;        // Number of APs/devices reported during the scan
+    uint32_t duration_ms;       // Wall-clock duration of the scan
+    uint32_t timestamp_ms;      // Time when the scan finished (millis())
+} netsec_scan_summary_t;
+
 /* NETSEC result types pushed to netsec_result_queue */
 typedef enum {
     NETSEC_RES_NONE = 0,
@@ -42,6 +49,7 @@ typedef struct {
     union {
         netsec_wifi_ap_t wifi_ap;
         netsec_ble_device_t ble_device;
+        netsec_scan_summary_t scan_summary; // Populated for *_SCAN_DONE events
     } data;
 } netsec_result_t;
 

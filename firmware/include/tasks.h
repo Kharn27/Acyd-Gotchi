@@ -6,6 +6,11 @@
 // Task prototypes and inter-task communication handles.
 // Tasks are started in system_init.cpp.
 
+/* Queue depth configuration (kept here so both tasks and producers share the same limits) */
+#define UI_EVENT_QUEUE_LENGTH       32
+#define NETSEC_COMMAND_QUEUE_LENGTH 12
+#define NETSEC_RESULT_QUEUE_LENGTH  96
+
 /* UI task: handles LVGL event loop and display updates */
 void ui_task(void* pvParameters);
 

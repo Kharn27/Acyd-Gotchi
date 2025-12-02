@@ -42,9 +42,9 @@ void system_init(void) {
     
     // Create inter-task communication queues
     Serial.println("[SYSTEM] Creating queues...");
-    ui_event_queue = xQueueCreate(16, sizeof(ui_event_t));
-    netsec_command_queue = xQueueCreate(8, sizeof(netsec_command_t));
-    netsec_result_queue = xQueueCreate(32, sizeof(netsec_result_t));
+    ui_event_queue = xQueueCreate(UI_EVENT_QUEUE_LENGTH, sizeof(ui_event_t));
+    netsec_command_queue = xQueueCreate(NETSEC_COMMAND_QUEUE_LENGTH, sizeof(netsec_command_t));
+    netsec_result_queue = xQueueCreate(NETSEC_RESULT_QUEUE_LENGTH, sizeof(netsec_result_t));
     
     if (!ui_event_queue || !netsec_command_queue || !netsec_result_queue) {
         Serial.println("[ERROR] Failed to create queues!");

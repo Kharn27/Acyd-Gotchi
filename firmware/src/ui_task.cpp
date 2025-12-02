@@ -8,6 +8,8 @@
 
 #include "tasks.h"
 #include "ui_api.h"
+#include "ui_screens.h"
+#include "netsec_api.h"
 #include "lvgl_port.h"
 
 #include "lvgl.h"
@@ -36,6 +38,21 @@ void ui_task(void * pvParameters)
   while (1) {
     // Process LVGL internal timers and redraw
     lv_timer_handler();
+
+    // Handle NETSEC results (non-blocking)
+    netsec_result_t netsec_res;
+    while (xQueueReceive(netsec_result_queue, &netsec_res, 0) == pdTRUE) {
+      switch (netsec_res.type) {
+        case NETSEC_RES_BLE_DEVICE_FOUND:
+          ui_ble_handle_device_found(&netsec_res.data.ble_device);
+          break;
+        case NETSEC_RES_BLE_SCAN_DONE:
+          ui_ble_handle_scan_done();
+          break;
+        default:
+          break;
+      }
+    }
 
     // Handle UI events from queue (non-blocking)
     ui_event_t event;

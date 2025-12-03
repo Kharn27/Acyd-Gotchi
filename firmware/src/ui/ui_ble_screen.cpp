@@ -476,7 +476,7 @@ static void align_empty_label(void)
 {
   if (!g_empty_label || !g_device_list) return;
 
-  lv_obj_align(g_empty_label, LV_ALIGN_CENTER);
+  lv_obj_align(g_empty_label, LV_ALIGN_CENTER, 0, 0);
 }
 
 static void start_scan_timer(uint32_t duration_ms)

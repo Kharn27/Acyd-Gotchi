@@ -82,6 +82,7 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_top, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(band_top, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_clear_flag(band_top, LV_OBJ_FLAG_SCROLLABLE);
 
   // Screen title within the top band
   lv_obj_t* title = lv_label_create(band_top);
@@ -98,7 +99,8 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_flex_flow(g_idle_container, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(g_idle_container, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_style_pad_all(g_idle_container, 0, 0);
-  lv_obj_set_size(g_idle_container, LV_SIZE_CONTENT, LV_PCT(100));
+  lv_obj_set_size(g_idle_container, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_clear_flag(g_idle_container, LV_OBJ_FLAG_SCROLLABLE);
 
   g_ble_scan_button = lv_btn_create(g_idle_container);
   lv_obj_set_size(g_ble_scan_button, BUTTON_WIDTH, BUTTON_HEIGHT);
@@ -119,8 +121,9 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_flex_align(g_duration_container, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_style_pad_gap(g_duration_container, PAD_TINY, 0);
   lv_obj_set_style_pad_all(g_duration_container, 0, 0);
-  lv_obj_set_size(g_duration_container, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_size(g_duration_container, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   lv_obj_add_flag(g_duration_container, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_flag(g_duration_container, LV_OBJ_FLAG_SCROLLABLE);
 
   const int durations[] = {10, 20, 30};
   for (uint8_t i = 0; i < sizeof(durations) / sizeof(durations[0]); i++) {
@@ -148,6 +151,7 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_style_pad_gap(g_scanning_container, PAD_TINY, 0);
   lv_obj_set_size(g_scanning_container, LV_SIZE_CONTENT, LV_PCT(100));
   lv_obj_add_flag(g_scanning_container, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_flag(g_scanning_container, LV_OBJ_FLAG_SCROLLABLE);
 
   g_scanning_spinner = lv_spinner_create(g_scanning_container, 1000, 90);
   lv_obj_set_size(g_scanning_spinner, BUTTON_HEIGHT - PAD_TINY, BUTTON_HEIGHT - PAD_TINY);
@@ -210,6 +214,9 @@ void ui_ble_set_state_idle(void)
   stop_scan_timer();
   g_scan_remaining_ms = 0;
   set_top_band_state(TOP_STATE_IDLE);
+  if (g_status_label) {
+    lv_label_set_text(g_status_label, "Press Scan to search for BLE devices.");
+  }
 }
 
 void ui_ble_set_state_choosing_duration(void)
@@ -346,23 +353,14 @@ static void set_top_band_state(top_band_state_t state)
     case TOP_STATE_SCANNING:
       lv_obj_add_flag(g_idle_container, LV_OBJ_FLAG_HIDDEN);
       lv_obj_clear_flag(g_scanning_container, LV_OBJ_FLAG_HIDDEN);
-      lv_obj_clear_flag(g_duration_container, LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(g_duration_container, LV_OBJ_FLAG_HIDDEN);
       ui_bottom_button_set("Cancel", on_cancel_btn_click);
-      for (lv_obj_t* btn : g_duration_buttons) {
-        if (btn) {
-          lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
-          lv_obj_add_state(btn, LV_STATE_DISABLED);
-        }
-      }
       break;
     case TOP_STATE_IDLE:
     default:
       lv_obj_clear_flag(g_idle_container, LV_OBJ_FLAG_HIDDEN);
       lv_obj_add_flag(g_duration_container, LV_OBJ_FLAG_HIDDEN);
       lv_obj_add_flag(g_scanning_container, LV_OBJ_FLAG_HIDDEN);
-      if (g_status_label) {
-        lv_label_set_text(g_status_label, "Press Scan to search for BLE devices.");
-      }
       ui_bottom_button_restore();
       break;
   }
@@ -510,7 +508,11 @@ static void scan_timer_cb(lv_timer_t* timer)
   if (g_scan_remaining_ms <= 1000) {
     g_scan_remaining_ms = 0;
     stop_scan_timer();
-    update_scan_status_label();
+    if (g_scan_active) {
+      ui_ble_handle_scan_completed(NULL);
+    } else {
+      update_scan_status_label();
+    }
     return;
   }
 

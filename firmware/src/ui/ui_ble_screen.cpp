@@ -563,6 +563,9 @@ static void scan_timer_cb(lv_timer_t* timer)
     g_scan_remaining_ms = 0;
     stop_scan_timer();
     update_scan_status_label();
+    // Fallback: ensure UI exits scanning state even if NETSEC completion
+    // event is delayed or lost.
+    ui_post_event(UI_EVENT_BLE_SCAN_DONE);
     return;
   }
 

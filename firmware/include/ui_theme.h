@@ -18,7 +18,7 @@ extern "C" {
 // If the background looks inverted (gray/white), enable TFT_INVERSION_ON in platformio.ini.
 #define COLOR_BACKGROUND 0x000000  // Base background for full screens
 #define COLOR_SURFACE    0x00FF00  // Slightly lifted surfaces (cards, lists, bands)
-#define COLOR_ACCENT     0xFF00FF  // Neon accent for borders, highlights, focus
+#define COLOR_ACCENT     0xAA33CC  // Neon accent for borders, highlights, focus
 #define COLOR_TEXT       0x00FF00  // Primary text color; dim via opacity when needed
 #define COLOR_GREEN      0xFF00FF  // Neon Green accent
 #define COLOR_CPC_BLUE   0x0000AA  // Amstrad CPC blue for central areas

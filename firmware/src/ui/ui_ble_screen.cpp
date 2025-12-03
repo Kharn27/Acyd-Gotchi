@@ -78,8 +78,8 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_t* band_top = lv_obj_create(scr);
   lv_obj_set_size(band_top, LV_HOR_RES, BAND_HEIGHT);
   lv_obj_set_pos(band_top, 0, 0);
-  lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_SURFACE), 0);
-  lv_obj_set_style_bg_opa(band_top, LV_OPA_30, 0);
+  lv_obj_set_style_bg_color(band_top, lv_color_hex(COLOR_CPC_BLUE), 0);
+  lv_obj_set_style_bg_opa(band_top, LV_OPA_10, 0);
   lv_obj_set_style_border_width(band_top, 0, 0);
   lv_obj_set_style_pad_all(band_top, PAD_SMALL, 0);
   lv_obj_set_flex_flow(band_top, LV_FLEX_FLOW_ROW);
@@ -113,7 +113,7 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_label_set_text(label_scan, "Scan");
   lv_obj_center(label_scan);
   lv_obj_add_style(label_scan, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(label_scan, lv_color_hex(COLOR_TEXT), 0);
+  lv_obj_set_style_text_color(label_scan, lv_color_hex(COLOR_CPC_YELLOW), 0);
 
   // Duration selection container (10/20/30s)
   g_duration_container = lv_obj_create(band_top);

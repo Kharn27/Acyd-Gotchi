@@ -31,7 +31,7 @@ extern "C" {
 // Spacing & dimensions
 #define PAD_TINY   2
 #define PAD_SMALL  4
-#define PAD_NORMAL 8
+#define PAD_NORMAL 6
 #define PAD_LARGE  16
 
 #define RADIUS_SMALL  3
@@ -41,7 +41,7 @@ extern "C" {
 // Component dimensions
 #define BUTTON_HEIGHT 32
 #define BUTTON_WIDTH  80
-#define BAND_HEIGHT   40
+#define BAND_HEIGHT   36
 
 // Screen layout
 #define MAIN_SCREEN_PET_SIZE 120

@@ -28,13 +28,14 @@ static ble_ui_state_t g_ble_ui_state = BLE_UI_STATE_IDLE;
 
 static void ui_handle_ble_duration_selection(uint32_t duration_s)
 {
-  ui_ble_set_state_scanning(duration_s * 1000);
+  const uint32_t duration_ms = duration_s * 1000;
+  ui_ble_show_scan_request(duration_ms);
   g_ble_ui_state = BLE_UI_STATE_SCANNING;
 
   if (netsec_command_queue) {
     netsec_command_t cmd = { NETSEC_CMD_NONE };
     cmd.type = NETSEC_CMD_BLE_SCAN_START;
-    cmd.data.ble_scan_start.duration_ms = duration_s * 1000;
+    cmd.data.ble_scan_start.duration_ms = duration_ms;
     xQueueSend(netsec_command_queue, &cmd, 0);
   }
 }

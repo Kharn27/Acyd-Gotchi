@@ -262,6 +262,25 @@ void ui_ble_cancel_scan(void)
   refresh_empty_state();
 }
 
+void ui_ble_show_scan_request(uint32_t duration_ms)
+{
+  g_scan_active = false;
+  stop_scan_timer();
+  g_scan_remaining_ms = duration_ms;
+  g_last_duration_ms = duration_ms ? duration_ms : g_last_duration_ms;
+  g_has_scanned = false;
+  set_top_band_state(TOP_STATE_SCANNING);
+
+  if (g_status_label) {
+    lv_label_set_text_fmt(g_status_label, "Starting scan (%lus)...",
+                          static_cast<unsigned long>(g_last_duration_ms / 1000));
+  }
+  if (g_ble_scan_button) {
+    lv_obj_add_state(g_ble_scan_button, LV_STATE_DISABLED);
+  }
+  refresh_empty_state();
+}
+
 void ui_ble_prepare_for_scan(uint32_t duration_ms)
 {
   clear_device_list();
@@ -536,11 +555,7 @@ static void scan_timer_cb(lv_timer_t* timer)
   if (g_scan_remaining_ms <= 1000) {
     g_scan_remaining_ms = 0;
     stop_scan_timer();
-    if (g_scan_active) {
-      ui_ble_handle_scan_completed(NULL);
-    } else {
-      update_scan_status_label();
-    }
+    update_scan_status_label();
     return;
   }
 

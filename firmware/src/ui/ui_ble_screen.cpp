@@ -242,7 +242,14 @@ void ui_ble_set_state_choosing_duration(void)
 
 void ui_ble_set_state_scanning(uint32_t duration_ms)
 {
-  ui_ble_prepare_for_scan(duration_ms);
+  // Avoid redundant list clears if we already transitioned to scanning.
+  if (!g_scan_active) {
+    ui_ble_prepare_for_scan(duration_ms);
+  } else {
+    g_scan_remaining_ms = duration_ms;
+    g_last_duration_ms = duration_ms ? duration_ms : g_last_duration_ms;
+    update_scan_status_label();
+  }
   set_top_band_state(TOP_STATE_SCANNING);
 }
 

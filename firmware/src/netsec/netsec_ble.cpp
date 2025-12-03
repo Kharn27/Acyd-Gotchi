@@ -14,6 +14,7 @@
 
 static BLEScan* s_ble_scan = nullptr;
 static bool s_ble_scan_running = false;
+static bool s_ble_cancel_requested = false;
 static TaskHandle_t s_ble_scan_task = nullptr;
 static TimerHandle_t s_ble_scan_timer = nullptr;
 static netsec_ble_device_t s_ble_devices[NETSEC_BLE_DEVICE_BUFFER_SIZE];
@@ -38,7 +39,7 @@ static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t devic
   xQueueSend(netsec_result_queue, &res, 0);
 }
 
-static void netsec_ble_finalize_scan(void) {
+static void netsec_ble_finalize_scan(bool canceled) {
 #if defined(ARDUINO_ARCH_ESP32)
   if (s_ble_scan) {
     s_ble_scan->stop();
@@ -47,12 +48,15 @@ static void netsec_ble_finalize_scan(void) {
 #endif
 
   uint32_t elapsed_ms = s_ble_scan_start_ms ? (millis() - s_ble_scan_start_ms) : 0;
-  netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_COMPLETED, s_ble_devices_reported, elapsed_ms);
-  Serial.printf("[NETSEC:BLE] Scan completed: %u devices in %lu ms\n",
+  netsec_result_type_t evt_type = canceled ? NETSEC_RES_BLE_SCAN_CANCELED : NETSEC_RES_BLE_SCAN_COMPLETED;
+  netsec_ble_post_scan_event(evt_type, s_ble_devices_reported, elapsed_ms);
+  Serial.printf("[NETSEC:BLE] Scan %s: %u devices in %lu ms\n",
+                canceled ? "canceled" : "completed",
                 static_cast<unsigned>(s_ble_devices_reported),
                 static_cast<unsigned long>(elapsed_ms));
 
   s_ble_scan_running = false;
+  s_ble_cancel_requested = false;
   s_ble_scan_task = nullptr;
   s_ble_scan_start_ms = 0;
   s_ble_device_write_idx = 0;
@@ -76,6 +80,7 @@ static void netsec_ble_timeout_cb(TimerHandle_t xTimer) {
 static void netsec_ble_scan_task(void* pvParameters) {
   uint32_t duration_ms = reinterpret_cast<uint32_t>(pvParameters);
   const TickType_t stop_tick = xTaskGetTickCount() + pdMS_TO_TICKS(duration_ms);
+  bool canceled = false;
 
   s_ble_scan_running = true;
   Serial.printf("[NETSEC:BLE] Starting BLE scan for %lu ms\n", static_cast<unsigned long>(duration_ms));
@@ -92,7 +97,7 @@ static void netsec_ble_scan_task(void* pvParameters) {
       slice_s = 1;
     }
 
-    BLEScanResults results = s_ble_scan->start(slice_s, true);
+    BLEScanResults results = s_ble_scan->start(slice_s, false);
     const int found = results.getCount();
     for (int i = 0; i < found; ++i) {
       BLEAdvertisedDevice dev = results.getDevice(i);
@@ -109,12 +114,17 @@ static void netsec_ble_scan_task(void* pvParameters) {
     uint32_t notify_value = 0;
     if (xTaskNotifyWait(0, NETSEC_BLE_NOTIFY_CANCEL, &notify_value, 0) == pdTRUE) {
       if (notify_value & NETSEC_BLE_NOTIFY_CANCEL) {
+        canceled = s_ble_cancel_requested;
         break;
       }
     }
   }
 
-  netsec_ble_finalize_scan();
+  if (!canceled && s_ble_cancel_requested) {
+    canceled = true;
+  }
+
+  netsec_ble_finalize_scan(canceled);
   vTaskDelete(NULL);
 }
 #endif
@@ -146,6 +156,7 @@ void netsec_ble_start_scan(uint32_t duration_ms)
   s_ble_devices_reported = 0;
   s_ble_scan_start_ms = millis();
   s_ble_scan_running = true;
+  s_ble_cancel_requested = false;
   netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_STARTED, 0, duration_ms);
 
   if (s_ble_scan_timer) {
@@ -186,6 +197,7 @@ void netsec_ble_stop_scan(void)
     xTimerStop(s_ble_scan_timer, 0);
   }
   s_ble_scan_running = false;
+  s_ble_cancel_requested = true;
   if (s_ble_scan_task) {
     xTaskNotify(s_ble_scan_task, NETSEC_BLE_NOTIFY_CANCEL, eSetBits);
   }

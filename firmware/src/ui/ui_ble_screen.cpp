@@ -12,6 +12,9 @@
 #include "netsec_api.h"
 #include "netsec/netsec_ble.h"
 #include "lvgl.h"
+#if defined(ARDUINO_ARCH_ESP32)
+#include <esp_system.h>
+#endif
 
 #include <Arduino.h>
 #include <stdio.h>
@@ -25,12 +28,14 @@ static lv_obj_t* g_duration_container = NULL;
 static lv_obj_t* g_idle_container = NULL;
 static lv_obj_t* g_scanning_container = NULL;
 static lv_obj_t* g_scanning_spinner = NULL;
+static lv_obj_t* g_list_title = NULL;
 static lv_obj_t* g_device_list = NULL;
 static lv_obj_t* g_empty_label = NULL;
 static lv_obj_t* g_status_label = NULL;
 static lv_timer_t* g_scan_timer = NULL;
 static lv_obj_t* g_duration_buttons[3] = {NULL};
 static bool g_has_scanned = false;
+static char g_local_mac_str[18] = "--:--:--:--:--:--";
 
 typedef struct {
   bool in_use;
@@ -66,6 +71,8 @@ static void update_scan_status_label(void);
 static ble_device_entry_t* find_entry_by_addr(const uint8_t* addr);
 static ble_device_entry_t* allocate_entry(const uint8_t* addr);
 static void scan_timer_cb(lv_timer_t* timer);
+static void fetch_local_mac(void);
+static void update_title_mac_label(void);
 
 lv_obj_t* ui_create_ble_screen(void)
 {
@@ -172,11 +179,12 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_clear_flag(g_content_container, LV_OBJ_FLAG_SCROLLABLE);
 
   // Title for list
-  lv_obj_t* list_title = lv_label_create(g_content_container);
-  lv_label_set_text(list_title, "BLE Devices");
-  lv_obj_add_style(list_title, ui_get_style_label_title(), 0);
-  lv_obj_set_style_text_color(list_title, lv_color_hex(COLOR_CPC_YELLOW), 0);
-  lv_obj_set_style_pad_bottom(list_title, PAD_SMALL, 0);
+  fetch_local_mac();
+  g_list_title = lv_label_create(g_content_container);
+  update_title_mac_label();
+  lv_obj_add_style(g_list_title, ui_get_style_label_title(), 0);
+  lv_obj_set_style_text_color(g_list_title, lv_color_hex(COLOR_CPC_YELLOW), 0);
+  lv_obj_set_style_pad_bottom(g_list_title, PAD_SMALL, 0);
 
   // Status text inside the content area
   g_status_label = lv_label_create(g_content_container);
@@ -271,21 +279,9 @@ void ui_ble_cancel_scan(void)
 
 void ui_ble_show_scan_request(uint32_t duration_ms)
 {
-  g_scan_active = false;
-  stop_scan_timer();
-  g_scan_remaining_ms = duration_ms;
-  g_last_duration_ms = duration_ms ? duration_ms : g_last_duration_ms;
-  g_has_scanned = false;
+  // Kick off UI-side scan state immediately while waiting for NETSEC start ack.
+  ui_ble_prepare_for_scan(duration_ms);
   set_top_band_state(TOP_STATE_SCANNING);
-
-  if (g_status_label) {
-    lv_label_set_text_fmt(g_status_label, "Starting scan (%lus)...",
-                          static_cast<unsigned long>(g_last_duration_ms / 1000));
-  }
-  if (g_ble_scan_button) {
-    lv_obj_add_state(g_ble_scan_button, LV_STATE_DISABLED);
-  }
-  refresh_empty_state();
 }
 
 void ui_ble_prepare_for_scan(uint32_t duration_ms)
@@ -321,6 +317,7 @@ void ui_ble_handle_scan_started(const netsec_scan_summary_t* meta)
 
 void ui_ble_handle_scan_completed(const netsec_scan_summary_t* meta)
 {
+  g_scan_active = false;
   g_scan_active = false;
   stop_scan_timer();
   g_scan_remaining_ms = 0;
@@ -571,5 +568,26 @@ static void scan_timer_cb(lv_timer_t* timer)
 
   g_scan_remaining_ms -= 1000;
   update_scan_status_label();
+}
+
+static void fetch_local_mac(void)
+{
+#if defined(ARDUINO_ARCH_ESP32)
+  uint8_t mac[6] = {0};
+  if (esp_read_mac(mac, ESP_MAC_WIFI_STA) == ESP_OK) {
+    snprintf(g_local_mac_str, sizeof(g_local_mac_str),
+             "%02X:%02X:%02X:%02X:%02X:%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  }
+#else
+  snprintf(g_local_mac_str, sizeof(g_local_mac_str), "--:--:--:--:--:--");
+#endif
+}
+
+static void update_title_mac_label(void)
+{
+  if (g_list_title) {
+    lv_label_set_text_fmt(g_list_title, "BLE Devices (%s)", g_local_mac_str);
+  }
 }
 

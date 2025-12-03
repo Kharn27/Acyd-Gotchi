@@ -33,6 +33,7 @@ uint32_t ui_ble_get_last_scan_duration_ms(void);
 void ui_ble_set_state_idle(void);
 void ui_ble_set_state_choosing_duration(void);
 void ui_ble_set_state_scanning(uint32_t duration_ms);
+void ui_ble_show_scan_request(uint32_t duration_ms);
 void ui_ble_cancel_scan(void);
 
 // Create settings screen (placeholder)

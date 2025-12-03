@@ -25,20 +25,6 @@ enum {
   NETSEC_BLE_NOTIFY_CANCEL = 1 << 0,
 };
 
-#if defined(ARDUINO_ARCH_ESP32)
-class NetsecBLEAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
-  void onResult(BLEAdvertisedDevice advertisedDevice) override {
-    std::string name = advertisedDevice.haveName() ? advertisedDevice.getName() : std::string("");
-    uint32_t flags = static_cast<uint32_t>(advertisedDevice.getAddressType());
-    netsec_ble_post_device(
-        name.c_str(),
-        advertisedDevice.getRSSI(),
-        reinterpret_cast<const uint8_t*>(advertisedDevice.getAddress().getNative()),
-        flags);
-  }
-};
-#endif
-
 static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t device_count, uint32_t duration_ms) {
   extern QueueHandle_t netsec_result_queue;
   if (!netsec_result_queue) return;
@@ -62,10 +48,14 @@ static void netsec_ble_finalize_scan(void) {
 
   uint32_t elapsed_ms = s_ble_scan_start_ms ? (millis() - s_ble_scan_start_ms) : 0;
   netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_COMPLETED, s_ble_devices_reported, elapsed_ms);
+  Serial.printf("[NETSEC:BLE] Scan completed: %u devices in %lu ms\n",
+                static_cast<unsigned>(s_ble_devices_reported),
+                static_cast<unsigned long>(elapsed_ms));
 
   s_ble_scan_running = false;
   s_ble_scan_task = nullptr;
   s_ble_scan_start_ms = 0;
+  s_ble_device_write_idx = 0;
 
   if (s_ble_scan_timer) {
     xTimerStop(s_ble_scan_timer, 0);
@@ -103,7 +93,18 @@ static void netsec_ble_scan_task(void* pvParameters) {
     }
 
     BLEScanResults results = s_ble_scan->start(slice_s, true);
-    (void)results;
+    const int found = results.getCount();
+    for (int i = 0; i < found; ++i) {
+      BLEAdvertisedDevice dev = results.getDevice(i);
+      std::string name = dev.haveName() ? dev.getName() : std::string("");
+      uint32_t flags = static_cast<uint32_t>(dev.getAddressType());
+      netsec_ble_post_device(
+          name.c_str(),
+          dev.getRSSI(),
+          reinterpret_cast<const uint8_t*>(dev.getAddress().getNative()),
+          flags);
+    }
+    s_ble_scan->clearResults();
 
     uint32_t notify_value = 0;
     if (xTaskNotifyWait(0, NETSEC_BLE_NOTIFY_CANCEL, &notify_value, 0) == pdTRUE) {
@@ -140,8 +141,8 @@ void netsec_ble_start_scan(uint32_t duration_ms)
     s_ble_scan->setActiveScan(true);
     s_ble_scan->setInterval(100);
     s_ble_scan->setWindow(99);
-    s_ble_scan->setAdvertisedDeviceCallbacks(new NetsecBLEAdvertisedDeviceCallbacks(), true);
   }
+  s_ble_device_write_idx = 0;
   s_ble_devices_reported = 0;
   s_ble_scan_start_ms = millis();
   s_ble_scan_running = true;
@@ -210,6 +211,11 @@ void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uin
   }
   device_slot->rssi = static_cast<int8_t>(rssi);
   device_slot->flags = flags;
+
+  Serial.printf("[NETSEC:BLE] Device: %s | RSSI %d | name '%s'\n",
+                strlen(device_slot->mac_str) ? device_slot->mac_str : "<unknown>",
+                device_slot->rssi,
+                strlen(device_slot->name) ? device_slot->name : "");
 
   netsec_result_t res;
   memset(&res, 0, sizeof(res));

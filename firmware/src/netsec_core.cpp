@@ -7,6 +7,7 @@
 #if defined(ARDUINO_ARCH_ESP32)
 #include <WiFi.h>
 #endif
+#include "netsec_api.h"
 #include "netsec_wifi.h"
 #include "netsec_ble.h"
 #include "board_config.h"
@@ -35,9 +36,9 @@ void netsec_stop_wifi_scan(void) {
     netsec_wifi_stop_scan();
 }
 
-void netsec_start_ble_scan(void) {
-    Serial.println("[NETSEC] BLE scan requested");
-    netsec_ble_start_scan();
+void netsec_start_ble_scan(uint32_t duration_ms) {
+    Serial.printf("[NETSEC] BLE scan requested for %lu ms\n", static_cast<unsigned long>(duration_ms));
+    netsec_ble_start_scan(duration_ms);
 }
 
 void netsec_stop_ble_scan(void) {
@@ -58,29 +59,37 @@ bool netsec_request_handshake_capture(const netsec_wifi_ap_t* target) {
 }
 
 // netsec_task: simple command processor (start/stop scans)
-// Commands are posted to `netsec_command_queue` as uint32_t opcodes.
+// Commands are posted to `netsec_command_queue` as netsec_command_t structures.
 extern QueueHandle_t netsec_command_queue;
 void netsec_task(void* pvParameters) {
     (void)pvParameters;
     Serial.println("[NETSEC] Task started");
-    uint32_t cmd;
+    netsec_command_t cmd;
     for (;;) {
         if (xQueueReceive(netsec_command_queue, &cmd, pdMS_TO_TICKS(1000)) == pdTRUE) {
-            switch (cmd) {
-                case 1: // START_WIFI_SCAN
+            switch (cmd.type) {
+                case NETSEC_CMD_WIFI_SCAN_START:
                     netsec_start_wifi_scan();
                     break;
-                case 2: // STOP_WIFI_SCAN
+                case NETSEC_CMD_WIFI_SCAN_STOP:
                     netsec_stop_wifi_scan();
                     break;
-                case 3: // START_BLE_SCAN
-                    netsec_start_ble_scan();
+                case NETSEC_CMD_BLE_SCAN_START:
+                    if (netsec_ble_is_scanning()) {
+                        Serial.println("[NETSEC] BLE scan already running, stopping before restart");
+                        netsec_stop_ble_scan();
+                    }
+                    netsec_start_ble_scan(cmd.data.ble_scan_start.duration_ms);
                     break;
-                case 4: // STOP_BLE_SCAN
-                    netsec_stop_ble_scan();
+                case NETSEC_CMD_BLE_SCAN_CANCEL:
+                    if (netsec_ble_is_scanning()) {
+                        netsec_stop_ble_scan();
+                    } else {
+                        Serial.println("[NETSEC] BLE scan stop requested but no scan active");
+                    }
                     break;
                 default:
-                    Serial.printf("[NETSEC] Unknown command %u\n", cmd);
+                    Serial.printf("[NETSEC] Unknown command %u\n", cmd.type);
                     break;
             }
         }

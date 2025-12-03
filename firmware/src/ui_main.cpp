@@ -15,15 +15,27 @@
 #include <freertos/queue.h>
 
 static QueueHandle_t g_ui_queue = NULL;
+static ui_event_router_t g_event_router = NULL;
 static lv_obj_t* g_main_screen = NULL;
 static lv_obj_t* g_wifi_screen = NULL;
 static lv_obj_t* g_ble_screen = NULL;
+static lv_obj_t* g_settings_screen = NULL;
 
 // Implementation of ui_api.h functions
 void ui_init(QueueHandle_t ui_queue)
 {
   g_ui_queue = ui_queue;
   Serial.println("PIXEL: UI module initialized");
+}
+
+void ui_register_event_router(ui_event_router_t router)
+{
+  g_event_router = router;
+}
+
+ui_event_router_t ui_get_event_router(void)
+{
+  return g_event_router;
 }
 
 bool ui_post_event(ui_event_t event)
@@ -84,6 +96,18 @@ void ui_show_ble_screen(void)
 
   ui_set_screen_state_to_ble();
   ui_load_screen(g_ble_screen);
+}
+
+void ui_show_settings_screen(void)
+{
+  Serial.println("PIXEL: Showing Settings screen");
+
+  if (!g_settings_screen) {
+    g_settings_screen = ui_create_settings_screen();
+  }
+
+  ui_set_screen_state_to_settings();
+  ui_load_screen(g_settings_screen);
 }
 
 void ui_update_pet(uint32_t delta_ms)

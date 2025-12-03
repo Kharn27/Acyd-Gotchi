@@ -42,9 +42,9 @@ void system_init(void) {
     
     // Create inter-task communication queues
     Serial.println("[SYSTEM] Creating queues...");
-    ui_event_queue = xQueueCreate(16, sizeof(ui_event_t));
-    netsec_command_queue = xQueueCreate(8, sizeof(uint32_t));  // Simplified: commands are uint32_t opcodes
-    netsec_result_queue = xQueueCreate(32, sizeof(netsec_result_t));
+    ui_event_queue = xQueueCreate(UI_EVENT_QUEUE_LENGTH, sizeof(ui_event_t));
+    netsec_command_queue = xQueueCreate(NETSEC_COMMAND_QUEUE_LENGTH, sizeof(netsec_command_t));
+    netsec_result_queue = xQueueCreate(NETSEC_RESULT_QUEUE_LENGTH, sizeof(netsec_result_t));
     
     if (!ui_event_queue || !netsec_command_queue || !netsec_result_queue) {
         Serial.println("[ERROR] Failed to create queues!");
@@ -143,8 +143,8 @@ __attribute__((weak)) void netsec_stop_wifi_scan(void) {
     Serial.println("[NETSEC] Stop WiFi scan stub");
 }
 
-__attribute__((weak)) void netsec_start_ble_scan(void) {
-    Serial.println("[NETSEC] Start BLE scan stub");
+__attribute__((weak)) void netsec_start_ble_scan(uint32_t duration_ms) {
+    Serial.printf("[NETSEC] Start BLE scan stub (%lu ms)\n", static_cast<unsigned long>(duration_ms));
 }
 
 __attribute__((weak)) void netsec_stop_ble_scan(void) {

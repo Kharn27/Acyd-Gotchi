@@ -494,9 +494,9 @@ static void update_scan_status_label(void)
   if (g_scan_active) {
     if (g_scan_remaining_ms > 0) {
       uint32_t remaining_s = (g_scan_remaining_ms + 999) / 1000;
-      lv_label_set_text_fmt(g_status_label, "Scanning (%lus)…", static_cast<unsigned long>(remaining_s));
+      lv_label_set_text_fmt(g_status_label, "Scanning (%lus)...", static_cast<unsigned long>(remaining_s));
     } else {
-      lv_label_set_text(g_status_label, "Finishing scan…");
+      lv_label_set_text(g_status_label, "Finishing scan...");
     }
   }
 }

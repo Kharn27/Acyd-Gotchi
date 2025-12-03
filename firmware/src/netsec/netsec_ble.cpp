@@ -10,6 +10,9 @@
 #if defined(ARDUINO_ARCH_ESP32)
 #include <BLEDevice.h>
 #include <BLEScan.h>
+#include <esp_bt.h>
+#include <esp_bt_main.h>
+#include <esp_heap_caps.h>
 #endif
 
 static BLEScan* s_ble_scan = nullptr;
@@ -21,6 +24,23 @@ static netsec_ble_device_t s_ble_devices[NETSEC_BLE_DEVICE_BUFFER_SIZE];
 static size_t s_ble_device_write_idx = 0;
 static uint32_t s_ble_scan_start_ms = 0;
 static uint16_t s_ble_devices_reported = 0;
+static bool s_bt_classic_mem_released = false;
+static constexpr size_t NETSEC_BLE_MIN_HEAP_BYTES = 70 * 1024;
+
+static bool netsec_ble_check_heap(void) {
+#if defined(ARDUINO_ARCH_ESP32)
+  const size_t free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+  const size_t largest_8bit = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+  Serial.printf("[NETSEC:BLE] Heap free=%u bytes, largest=%u bytes\n",
+                static_cast<unsigned>(free_8bit),
+                static_cast<unsigned>(largest_8bit));
+  if (free_8bit < NETSEC_BLE_MIN_HEAP_BYTES || largest_8bit < (NETSEC_BLE_MIN_HEAP_BYTES / 2)) {
+    Serial.println("[NETSEC:BLE] Not enough heap for BLE init, aborting scan");
+    return false;
+  }
+#endif
+  return true;
+}
 
 enum {
   NETSEC_BLE_NOTIFY_CANCEL = 1 << 0,
@@ -168,9 +188,25 @@ void netsec_ble_start_scan(uint32_t duration_ms)
     netsec_ble_stop_scan();
   }
 
+  if (!netsec_ble_check_heap()) {
+    return;
+  }
+
   if (!s_ble_scan) {
+    Serial.println("[NETSEC:BLE] Initializing BLE stack");
+#if defined(ARDUINO_ARCH_ESP32)
+    if (!s_bt_classic_mem_released) {
+      esp_err_t rel = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+      Serial.printf("[NETSEC:BLE] Release classic BT mem: %s\n", rel == ESP_OK ? "ok" : "error");
+      s_bt_classic_mem_released = true;
+    }
+#endif
     BLEDevice::init("");
     s_ble_scan = BLEDevice::getScan();
+    if (!s_ble_scan) {
+      Serial.println("[NETSEC:BLE] BLEDevice::getScan() returned null, aborting scan");
+      return;
+    }
     s_ble_scan->setActiveScan(true);
     s_ble_scan->setInterval(100);
     s_ble_scan->setWindow(99);

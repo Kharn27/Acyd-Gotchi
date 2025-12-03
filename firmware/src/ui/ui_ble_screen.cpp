@@ -33,7 +33,7 @@ static bool g_has_scanned = false;
 
 typedef struct {
   bool in_use;
-  uint8_t addr[6];
+  uint8_t mac_bytes[6];
   lv_obj_t* row;
   lv_obj_t* label;
 } ble_device_entry_t;
@@ -223,9 +223,9 @@ void ui_ble_set_state_choosing_duration(void)
   }
 }
 
-void ui_ble_set_state_scanning(uint32_t duration_s)
+void ui_ble_set_state_scanning(uint32_t duration_ms)
 {
-  ui_ble_prepare_for_scan(duration_s);
+  ui_ble_prepare_for_scan(duration_ms);
   set_top_band_state(TOP_STATE_SCANNING);
 }
 
@@ -245,12 +245,12 @@ void ui_ble_cancel_scan(void)
   refresh_empty_state();
 }
 
-void ui_ble_prepare_for_scan(uint32_t duration_s)
+void ui_ble_prepare_for_scan(uint32_t duration_ms)
 {
   clear_device_list();
 
   g_scan_active = true;
-  g_last_duration_ms = duration_s * 1000;
+  g_last_duration_ms = duration_ms ? duration_ms : g_last_duration_ms;
   g_scan_remaining_ms = g_last_duration_ms;
   start_scan_timer(g_scan_remaining_ms);
   update_scan_status_label();
@@ -267,15 +267,29 @@ void ui_ble_handle_device_found(const netsec_ble_device_t* device)
   upsert_device_row(device);
 }
 
-void ui_ble_handle_scan_done(void)
+void ui_ble_handle_scan_started(const netsec_scan_summary_t* meta)
+{
+  const uint32_t duration_ms = meta ? meta->duration_ms : g_last_duration_ms;
+  ui_ble_set_state_scanning(duration_ms);
+  g_scan_active = true;
+  if (g_status_label) {
+    lv_label_set_text(g_status_label, "Scanning…");
+  }
+  refresh_empty_state();
+}
+
+void ui_ble_handle_scan_completed(const netsec_scan_summary_t* meta)
 {
   g_scan_active = false;
   stop_scan_timer();
   g_scan_remaining_ms = 0;
-  if (g_status_label) {
-    lv_label_set_text(g_status_label, "Scan complete.");
-  }
   g_has_scanned = true;
+
+  if (g_status_label) {
+    uint16_t count = meta ? meta->item_count : 0;
+    lv_label_set_text_fmt(g_status_label, "Scan complete (%u device%s).", count, (count == 1) ? "" : "s");
+  }
+
   set_top_band_state(TOP_STATE_IDLE);
   if (g_ble_scan_button) {
     lv_obj_clear_state(g_ble_scan_button, LV_STATE_DISABLED);
@@ -373,7 +387,7 @@ static ble_device_entry_t* find_entry_by_addr(const uint8_t* addr)
   if (!addr) return NULL;
 
   for (size_t i = 0; i < NETSEC_BLE_DEVICE_BUFFER_SIZE; ++i) {
-    if (g_device_entries[i].in_use && memcmp(g_device_entries[i].addr, addr, sizeof(g_device_entries[i].addr)) == 0) {
+    if (g_device_entries[i].in_use && memcmp(g_device_entries[i].mac_bytes, addr, sizeof(g_device_entries[i].mac_bytes)) == 0) {
       return &g_device_entries[i];
     }
   }
@@ -391,7 +405,7 @@ static ble_device_entry_t* allocate_entry(const uint8_t* addr)
 
     memset(entry, 0, sizeof(*entry));
     entry->in_use = true;
-    memcpy(entry->addr, addr, sizeof(entry->addr));
+    memcpy(entry->mac_bytes, addr, sizeof(entry->mac_bytes));
 
     entry->row = lv_obj_create(g_device_list);
     lv_obj_set_size(entry->row, LV_PCT(100), LV_SIZE_CONTENT);
@@ -419,16 +433,13 @@ static void upsert_device_row(const netsec_ble_device_t* device)
 {
   if (!device || !g_device_list) return;
 
-  ble_device_entry_t* entry = find_entry_by_addr(device->addr);
+  ble_device_entry_t* entry = find_entry_by_addr(device->mac_bytes);
   if (!entry) {
-    entry = allocate_entry(device->addr);
+    entry = allocate_entry(device->mac_bytes);
   }
   if (!entry || !entry->label) return;
 
-  char mac[18];
-  snprintf(mac, sizeof(mac), "%02X:%02X:%02X:%02X:%02X:%02X",
-           device->addr[0], device->addr[1], device->addr[2],
-           device->addr[3], device->addr[4], device->addr[5]);
+  const char* mac = strlen(device->mac_str) ? device->mac_str : "--:--:--:--:--:--";
 
   const char* name = strlen(device->name) ? device->name : "(unknown)";
   lv_label_set_text_fmt(entry->label, "%s\n%s\nRSSI: %d dBm", name, mac, device->rssi);
@@ -512,9 +523,8 @@ static void scan_timer_cb(lv_timer_t* timer)
 
   if (g_scan_remaining_ms <= 1000) {
     g_scan_remaining_ms = 0;
-    g_scan_active = false;
     stop_scan_timer();
-    ui_post_event(UI_EVENT_BLE_SCAN_DONE);
+    update_scanning_banner();
     return;
   }
 

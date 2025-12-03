@@ -25,13 +25,14 @@ void ui_wifi_handle_scan_done(void);
 // Create BLE scan results screen
 lv_obj_t* ui_create_ble_screen(void);
 lv_obj_t* ui_ble_get_scan_button(void);
-void ui_ble_prepare_for_scan(uint32_t duration_s);
+void ui_ble_prepare_for_scan(uint32_t duration_ms);
 void ui_ble_handle_device_found(const netsec_ble_device_t* device);
-void ui_ble_handle_scan_done(void);
+void ui_ble_handle_scan_started(const netsec_scan_summary_t* meta);
+void ui_ble_handle_scan_completed(const netsec_scan_summary_t* meta);
 uint32_t ui_ble_get_last_scan_duration_ms(void);
 void ui_ble_set_state_idle(void);
 void ui_ble_set_state_choosing_duration(void);
-void ui_ble_set_state_scanning(uint32_t duration_s);
+void ui_ble_set_state_scanning(uint32_t duration_ms);
 void ui_ble_cancel_scan(void);
 
 // Create settings screen (placeholder)

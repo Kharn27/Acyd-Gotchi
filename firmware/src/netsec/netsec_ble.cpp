@@ -78,10 +78,8 @@ static void netsec_ble_finalize_scan(void) {
 static void netsec_ble_timeout_cb(TimerHandle_t xTimer) {
   (void)xTimer;
   if (s_ble_scan_task) {
-    BaseType_t higher_woken = pdFALSE;
     s_ble_scan_running = false;
-    xTaskNotifyFromISR(s_ble_scan_task, NETSEC_BLE_NOTIFY_CANCEL, eSetBits, &higher_woken);
-    portYIELD_FROM_ISR(higher_woken);
+    xTaskNotify(s_ble_scan_task, NETSEC_BLE_NOTIFY_CANCEL, eSetBits);
   }
 }
 

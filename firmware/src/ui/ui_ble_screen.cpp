@@ -19,6 +19,7 @@
 #include <string.h>
 
 static lv_obj_t* g_ble_screen = NULL;
+static lv_obj_t* g_content_container = NULL;
 static lv_obj_t* g_ble_scan_button = NULL;
 static lv_obj_t* g_duration_container = NULL;
 static lv_obj_t* g_idle_container = NULL;
@@ -86,7 +87,7 @@ lv_obj_t* ui_create_ble_screen(void)
 
   // Screen title within the top band
   lv_obj_t* title = lv_label_create(band_top);
-  lv_label_set_text(title, "BLE Scan");
+  lv_label_set_text(title, "BLE");
   lv_obj_add_style(title, ui_get_style_label_title(), 0);
   lv_obj_set_style_text_color(title, lv_color_hex(COLOR_TEXT), 0);
   lv_obj_set_style_pad_left(title, PAD_SMALL, 0);
@@ -117,7 +118,7 @@ lv_obj_t* ui_create_ble_screen(void)
   g_duration_container = lv_obj_create(band_top);
   lv_obj_set_style_bg_opa(g_duration_container, LV_OPA_TRANSP, 0);
   lv_obj_set_style_border_width(g_duration_container, 0, 0);
-  lv_obj_set_flex_flow(g_duration_container, LV_FLEX_FLOW_ROW_WRAP);
+  lv_obj_set_flex_flow(g_duration_container, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(g_duration_container, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_style_pad_gap(g_duration_container, PAD_TINY, 0);
   lv_obj_set_style_pad_all(g_duration_container, 0, 0);
@@ -128,7 +129,7 @@ lv_obj_t* ui_create_ble_screen(void)
   const int durations[] = {10, 20, 30};
   for (uint8_t i = 0; i < sizeof(durations) / sizeof(durations[0]); i++) {
     lv_obj_t* btn = lv_btn_create(g_duration_container);
-    lv_obj_set_size(btn, BUTTON_WIDTH, BUTTON_HEIGHT);
+    lv_obj_set_size(btn, BUTTON_WIDTH - 20, BUTTON_HEIGHT);
     lv_obj_add_style(btn, ui_get_style_btn_primary(), 0);
     lv_obj_add_event_cb(btn, on_duration_btn_click, LV_EVENT_CLICKED, (void*)(intptr_t)durations[i]);
 
@@ -156,19 +157,39 @@ lv_obj_t* ui_create_ble_screen(void)
   g_scanning_spinner = lv_spinner_create(g_scanning_container, 1000, 90);
   lv_obj_set_size(g_scanning_spinner, BUTTON_HEIGHT - PAD_TINY, BUTTON_HEIGHT - PAD_TINY);
 
+  // Central content container
+  g_content_container = lv_obj_create(scr);
+  lv_obj_set_size(g_content_container, LV_HOR_RES, LV_VER_RES - BAND_HEIGHT - BAND_HEIGHT);
+  lv_obj_set_pos(g_content_container, 0, BAND_HEIGHT);
+  lv_obj_set_style_bg_color(g_content_container, lv_color_hex(COLOR_CPC_BLUE), 0);
+  lv_obj_set_style_bg_opa(g_content_container, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(g_content_container, 0, 0);
+  lv_obj_set_style_pad_all(g_content_container, PAD_NORMAL, 0);
+  lv_obj_set_flex_flow(g_content_container, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_align(g_content_container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+  lv_obj_clear_flag(g_content_container, LV_OBJ_FLAG_SCROLLABLE);
+
   // Title for list
-  lv_obj_t* list_title = lv_label_create(scr);
+  lv_obj_t* list_title = lv_label_create(g_content_container);
   lv_label_set_text(list_title, "BLE Devices");
-  lv_obj_set_pos(list_title, PAD_NORMAL, BAND_HEIGHT + PAD_SMALL);
   lv_obj_add_style(list_title, ui_get_style_label_title(), 0);
+  lv_obj_set_style_text_color(list_title, lv_color_hex(COLOR_CPC_YELLOW), 0);
+  lv_obj_set_style_pad_bottom(list_title, PAD_SMALL, 0);
+
+  // Status text inside the content area
+  g_status_label = lv_label_create(g_content_container);
+  lv_label_set_text(g_status_label, "Press Scan to search for BLE devices.");
+  lv_obj_add_style(g_status_label, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(g_status_label, lv_color_hex(COLOR_CPC_YELLOW), 0);
+  lv_obj_set_width(g_status_label, LV_PCT(100));
+  lv_label_set_long_mode(g_status_label, LV_LABEL_LONG_WRAP);
+  lv_obj_set_style_pad_bottom(g_status_label, PAD_SMALL, 0);
 
   // Scrollable list container
-  g_device_list = lv_obj_create(scr);
-  lv_obj_set_size(g_device_list, LV_HOR_RES - 2 * PAD_NORMAL,
-                  LV_VER_RES - BAND_HEIGHT - PAD_LARGE - PAD_NORMAL);
-  lv_obj_set_pos(g_device_list, PAD_NORMAL, BAND_HEIGHT + PAD_LARGE);
-  lv_obj_set_style_bg_color(g_device_list, lv_color_hex(COLOR_SURFACE), 0);
-  lv_obj_set_style_bg_opa(g_device_list, LV_OPA_20, 0);
+  g_device_list = lv_obj_create(g_content_container);
+  lv_obj_set_width(g_device_list, LV_PCT(100));
+  lv_obj_set_style_bg_color(g_device_list, lv_color_hex(COLOR_CPC_BLUE), 0);
+  lv_obj_set_style_bg_opa(g_device_list, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(g_device_list, 0, 0);
   lv_obj_set_style_pad_all(g_device_list, PAD_SMALL, 0);
   lv_obj_set_style_pad_gap(g_device_list, PAD_SMALL, 0);
@@ -176,20 +197,14 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_scroll_dir(g_device_list, LV_DIR_VER);
   lv_obj_set_scrollbar_mode(g_device_list, LV_SCROLLBAR_MODE_AUTO);
   lv_obj_set_flex_flow(g_device_list, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_grow(g_device_list, 1);
 
   // Empty state label
-  g_empty_label = lv_label_create(scr);
+  g_empty_label = lv_label_create(g_device_list);
   lv_label_set_text(g_empty_label, "Press Scan to search for BLE devices.");
   lv_obj_add_style(g_empty_label, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_empty_label, lv_color_hex(COLOR_TEXT), 0);
+  lv_obj_set_style_text_color(g_empty_label, lv_color_hex(COLOR_CPC_YELLOW), 0);
   align_empty_label();
-
-  // Status text
-  g_status_label = lv_label_create(scr);
-  lv_label_set_text(g_status_label, "Press Scan to search for BLE devices.");
-  lv_obj_add_style(g_status_label, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_status_label, lv_color_hex(COLOR_TEXT), 0);
-  lv_obj_set_pos(g_status_label, PAD_NORMAL, LV_VER_RES - PAD_LARGE);
 
   g_ble_screen = scr;
   set_top_band_state(TOP_STATE_IDLE);
@@ -403,15 +418,15 @@ static ble_device_entry_t* allocate_entry(const uint8_t* addr)
     entry->row = lv_obj_create(g_device_list);
     lv_obj_set_size(entry->row, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_clear_flag(entry->row, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(entry->row, lv_color_hex(COLOR_SURFACE), 0);
-    lv_obj_set_style_bg_opa(entry->row, LV_OPA_40, 0);
+    lv_obj_set_style_bg_color(entry->row, lv_color_hex(COLOR_CPC_BLUE), 0);
+    lv_obj_set_style_bg_opa(entry->row, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(entry->row, 0, 0);
     lv_obj_set_style_radius(entry->row, RADIUS_SMALL, 0);
     lv_obj_set_style_pad_all(entry->row, PAD_SMALL, 0);
 
     entry->label = lv_label_create(entry->row);
     lv_obj_add_style(entry->label, ui_get_style_label_normal(), 0);
-    lv_obj_set_style_text_color(entry->label, lv_color_hex(COLOR_TEXT), 0);
+    lv_obj_set_style_text_color(entry->label, lv_color_hex(COLOR_CPC_YELLOW), 0);
     lv_obj_set_width(entry->label, LV_PCT(100));
     lv_label_set_long_mode(entry->label, LV_LABEL_LONG_WRAP);
 
@@ -447,19 +462,21 @@ static void refresh_empty_state(void)
   const char* text = g_has_scanned ? "No BLE devices found." : "Press Scan to search for BLE devices.";
   lv_label_set_text(g_empty_label, text);
 
-  bool has_entries = lv_obj_get_child_cnt(g_device_list) > 0;
+  bool has_entries = lv_obj_get_child_cnt(g_device_list) > 1;
   if (has_entries) {
     lv_obj_add_flag(g_empty_label, LV_OBJ_FLAG_HIDDEN);
   } else {
     lv_obj_clear_flag(g_empty_label, LV_OBJ_FLAG_HIDDEN);
   }
+
+  align_empty_label();
 }
 
 static void align_empty_label(void)
 {
   if (!g_empty_label || !g_device_list) return;
 
-  lv_obj_align_to(g_empty_label, g_device_list, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_align(g_empty_label, LV_ALIGN_CENTER);
 }
 
 static void start_scan_timer(uint32_t duration_ms)

@@ -21,6 +21,8 @@ extern "C" {
 #define COLOR_ACCENT     0xFF00FF  // Neon accent for borders, highlights, focus
 #define COLOR_TEXT       0x00FF00  // Primary text color; dim via opacity when needed
 #define COLOR_GREEN      0xFF00FF  // Neon Green accent
+#define COLOR_CPC_BLUE   0x0000AA  // Amstrad CPC blue for central areas
+#define COLOR_CPC_YELLOW 0xFFFF00  // Amstrad CPC bright yellow for central text
 
 // Typography
 #define FONT_SIZE_SMALL   12

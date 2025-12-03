@@ -161,7 +161,6 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_size(g_bottom_button, BUTTON_WIDTH, BUTTON_HEIGHT);
   lv_obj_add_style(g_bottom_button, ui_get_style_btn_primary(), 0);
   lv_obj_add_event_cb(g_bottom_button, dispatch_bottom_button, LV_EVENT_CLICKED, NULL);
-  lv_obj_set_flex_grow(g_bottom_button, 1);
 
   g_bottom_button_label = lv_label_create(g_bottom_button);
   lv_obj_center(g_bottom_button_label);

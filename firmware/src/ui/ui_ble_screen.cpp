@@ -56,6 +56,7 @@ static void on_duration_btn_click(lv_event_t* e);
 static void on_cancel_btn_click(lv_event_t* e);
 static void set_top_band_state(top_band_state_t state);
 static void clear_device_list(void);
+static void create_empty_label(void);
 static void upsert_device_row(const netsec_ble_device_t* device);
 static void refresh_empty_state(void);
 static void align_empty_label(void);
@@ -200,11 +201,7 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_flex_grow(g_device_list, 1);
 
   // Empty state label
-  g_empty_label = lv_label_create(g_device_list);
-  lv_label_set_text(g_empty_label, "Press Scan to search for BLE devices.");
-  lv_obj_add_style(g_empty_label, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_empty_label, lv_color_hex(COLOR_CPC_YELLOW), 0);
-  align_empty_label();
+  create_empty_label();
 
   g_ble_screen = scr;
   set_top_band_state(TOP_STATE_IDLE);
@@ -386,8 +383,21 @@ static void clear_device_list(void)
   if (!g_device_list) return;
 
   lv_obj_clean(g_device_list);
+  g_empty_label = NULL;
   memset(g_device_entries, 0, sizeof(g_device_entries));
+  create_empty_label();
   refresh_empty_state();
+}
+
+static void create_empty_label(void)
+{
+  if (!g_device_list) return;
+
+  g_empty_label = lv_label_create(g_device_list);
+  lv_label_set_text(g_empty_label, "Press Scan to search for BLE devices.");
+  lv_obj_add_style(g_empty_label, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(g_empty_label, lv_color_hex(COLOR_CPC_YELLOW), 0);
+  align_empty_label();
 }
 
 static ble_device_entry_t* find_entry_by_addr(const uint8_t* addr)

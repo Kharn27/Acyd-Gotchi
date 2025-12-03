@@ -179,7 +179,7 @@ lv_obj_t* ui_create_ble_screen(void)
 
   // Status text inside the content area
   g_status_label = lv_label_create(g_content_container);
-  lv_label_set_text(g_status_label, "Press Scan to search for BLE devices.");
+  lv_label_set_text(g_status_label, "");
   lv_obj_add_style(g_status_label, ui_get_style_label_normal(), 0);
   lv_obj_set_style_text_color(g_status_label, lv_color_hex(COLOR_CPC_YELLOW), 0);
   lv_obj_set_width(g_status_label, LV_PCT(100));
@@ -227,7 +227,7 @@ void ui_ble_set_state_idle(void)
   g_scan_remaining_ms = 0;
   set_top_band_state(TOP_STATE_IDLE);
   if (g_status_label) {
-    lv_label_set_text(g_status_label, "Press Scan to search for BLE devices.");
+    lv_label_set_text(g_status_label, "");
   }
 }
 

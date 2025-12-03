@@ -4,6 +4,7 @@
 #include <string>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/timers.h>
 
 #if defined(ARDUINO_ARCH_ESP32)
 #include <BLEDevice.h>
@@ -13,10 +14,15 @@
 static BLEScan* s_ble_scan = nullptr;
 static bool s_ble_scan_running = false;
 static TaskHandle_t s_ble_scan_task = nullptr;
+static TimerHandle_t s_ble_scan_timer = nullptr;
 static netsec_ble_device_t s_ble_devices[NETSEC_BLE_DEVICE_BUFFER_SIZE];
 static size_t s_ble_device_write_idx = 0;
 static uint32_t s_ble_scan_start_ms = 0;
 static uint16_t s_ble_devices_reported = 0;
+
+enum {
+  NETSEC_BLE_NOTIFY_CANCEL = 1 << 0,
+};
 
 #if defined(ARDUINO_ARCH_ESP32)
 class NetsecBLEAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -45,25 +51,70 @@ static void netsec_ble_post_scan_done(uint16_t device_count, uint32_t duration_m
   xQueueSend(netsec_result_queue, &res, 0);
 }
 
+static void netsec_ble_finalize_scan(void) {
 #if defined(ARDUINO_ARCH_ESP32)
-static void netsec_ble_scan_task(void* pvParameters) {
-  uint32_t duration_ms = reinterpret_cast<uint32_t>(pvParameters);
-  uint32_t duration_s = (duration_ms + 999) / 1000;
-  if (duration_s == 0) {
-    duration_s = 1;
+  if (s_ble_scan) {
+    s_ble_scan->stop();
+    s_ble_scan->clearResults();
   }
-
-  s_ble_scan_running = true;
-  Serial.printf("[NETSEC:BLE] Starting BLE scan for %lu ms\n", static_cast<unsigned long>(duration_ms));
-
-  BLEScanResults results = s_ble_scan->start(duration_s, false);
-  (void)results;
+#endif
 
   uint32_t elapsed_ms = s_ble_scan_start_ms ? (millis() - s_ble_scan_start_ms) : 0;
   netsec_ble_post_scan_done(s_ble_devices_reported, elapsed_ms);
 
   s_ble_scan_running = false;
   s_ble_scan_task = nullptr;
+  s_ble_scan_start_ms = 0;
+
+  if (s_ble_scan_timer) {
+    xTimerStop(s_ble_scan_timer, 0);
+    xTimerDelete(s_ble_scan_timer, 0);
+    s_ble_scan_timer = nullptr;
+  }
+}
+
+#if defined(ARDUINO_ARCH_ESP32)
+static void netsec_ble_timeout_cb(TimerHandle_t xTimer) {
+  (void)xTimer;
+  if (s_ble_scan_task) {
+    BaseType_t higher_woken = pdFALSE;
+    s_ble_scan_running = false;
+    xTaskNotifyFromISR(s_ble_scan_task, NETSEC_BLE_NOTIFY_CANCEL, eSetBits, &higher_woken);
+    portYIELD_FROM_ISR(higher_woken);
+  }
+}
+
+static void netsec_ble_scan_task(void* pvParameters) {
+  uint32_t duration_ms = reinterpret_cast<uint32_t>(pvParameters);
+  const TickType_t stop_tick = xTaskGetTickCount() + pdMS_TO_TICKS(duration_ms);
+
+  s_ble_scan_running = true;
+  Serial.printf("[NETSEC:BLE] Starting BLE scan for %lu ms\n", static_cast<unsigned long>(duration_ms));
+
+  while (s_ble_scan_running && xTaskGetTickCount() < stop_tick) {
+    // Slice the scan to allow cancellation checks without long blocking calls.
+    TickType_t remaining_ticks = stop_tick - xTaskGetTickCount();
+    uint32_t slice_ms = pdTICKS_TO_MS(remaining_ticks);
+    if (slice_ms > 500) {
+      slice_ms = 500;
+    }
+    uint32_t slice_s = (slice_ms + 999) / 1000;
+    if (slice_s == 0) {
+      slice_s = 1;
+    }
+
+    BLEScanResults results = s_ble_scan->start(slice_s, true);
+    (void)results;
+
+    uint32_t notify_value = 0;
+    if (xTaskNotifyWait(0, NETSEC_BLE_NOTIFY_CANCEL, &notify_value, 0) == pdTRUE) {
+      if (notify_value & NETSEC_BLE_NOTIFY_CANCEL) {
+        break;
+      }
+    }
+  }
+
+  netsec_ble_finalize_scan();
   vTaskDelete(NULL);
 }
 #endif
@@ -92,15 +143,23 @@ void netsec_ble_start_scan(uint32_t duration_ms)
     s_ble_scan->setWindow(99);
     s_ble_scan->setAdvertisedDeviceCallbacks(new NetsecBLEAdvertisedDeviceCallbacks(), true);
   }
-  if (s_ble_scan_task) {
-    // Wait for previous task slot to be cleaned up
-    while (s_ble_scan_task) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-    }
-  }
   s_ble_devices_reported = 0;
   s_ble_scan_start_ms = millis();
   s_ble_scan_running = true;
+
+  if (s_ble_scan_timer) {
+    xTimerStop(s_ble_scan_timer, 0);
+    xTimerDelete(s_ble_scan_timer, 0);
+  }
+  s_ble_scan_timer = xTimerCreate("ble_scan_timeout",
+                                  pdMS_TO_TICKS(duration_ms),
+                                  pdFALSE,
+                                  nullptr,
+                                  netsec_ble_timeout_cb);
+  if (s_ble_scan_timer) {
+    xTimerStart(s_ble_scan_timer, 0);
+  }
+
   xTaskCreatePinnedToCore(
       netsec_ble_scan_task,
       "ble_scan",
@@ -122,15 +181,15 @@ void netsec_ble_stop_scan(void)
     return;
   }
   Serial.println("[NETSEC:BLE] Stop BLE scan");
-  if (s_ble_scan) s_ble_scan->stop();
-  if (s_ble_scan_task) {
-    // Give some time for the scan task to exit cleanly
-    while (s_ble_scan_task) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-    }
+  if (s_ble_scan_timer) {
+    xTimerStop(s_ble_scan_timer, 0);
   }
-#endif
   s_ble_scan_running = false;
+  if (s_ble_scan_task) {
+    xTaskNotify(s_ble_scan_task, NETSEC_BLE_NOTIFY_CANCEL, eSetBits);
+  }
+  // Cleanup will be performed by the scan task to avoid race conditions.
+#endif
 }
 
 void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uint32_t flags)

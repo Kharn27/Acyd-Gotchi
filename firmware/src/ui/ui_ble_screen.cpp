@@ -23,10 +23,10 @@ static lv_obj_t* g_ble_scan_button = NULL;
 static lv_obj_t* g_duration_container = NULL;
 static lv_obj_t* g_idle_container = NULL;
 static lv_obj_t* g_scanning_container = NULL;
+static lv_obj_t* g_scanning_spinner = NULL;
 static lv_obj_t* g_device_list = NULL;
 static lv_obj_t* g_empty_label = NULL;
 static lv_obj_t* g_status_label = NULL;
-static lv_obj_t* g_scanning_label = NULL;
 static lv_timer_t* g_scan_timer = NULL;
 static lv_obj_t* g_duration_buttons[3] = {NULL};
 static bool g_has_scanned = false;
@@ -64,7 +64,6 @@ static void update_scan_status_label(void);
 static ble_device_entry_t* find_entry_by_addr(const uint8_t* addr);
 static ble_device_entry_t* allocate_entry(const uint8_t* addr);
 static void scan_timer_cb(lv_timer_t* timer);
-static void update_scanning_banner(void);
 
 lv_obj_t* ui_create_ble_screen(void)
 {
@@ -145,15 +144,13 @@ lv_obj_t* ui_create_ble_screen(void)
   lv_obj_set_style_border_width(g_scanning_container, 0, 0);
   lv_obj_set_flex_flow(g_scanning_container, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(g_scanning_container, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_set_style_pad_gap(g_scanning_container, PAD_SMALL, 0);
   lv_obj_set_style_pad_all(g_scanning_container, 0, 0);
+  lv_obj_set_style_pad_gap(g_scanning_container, PAD_TINY, 0);
   lv_obj_set_size(g_scanning_container, LV_SIZE_CONTENT, LV_PCT(100));
   lv_obj_add_flag(g_scanning_container, LV_OBJ_FLAG_HIDDEN);
 
-  g_scanning_label = lv_label_create(g_scanning_container);
-  lv_label_set_text(g_scanning_label, "Scanning…");
-  lv_obj_add_style(g_scanning_label, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_scanning_label, lv_color_hex(COLOR_TEXT), 0);
+  g_scanning_spinner = lv_spinner_create(g_scanning_container, 1000, 90);
+  lv_obj_set_size(g_scanning_spinner, BUTTON_HEIGHT - PAD_TINY, BUTTON_HEIGHT - PAD_TINY);
 
   // Title for list
   lv_obj_t* list_title = lv_label_create(scr);
@@ -272,9 +269,7 @@ void ui_ble_handle_scan_started(const netsec_scan_summary_t* meta)
   const uint32_t duration_ms = meta ? meta->duration_ms : g_last_duration_ms;
   ui_ble_set_state_scanning(duration_ms);
   g_scan_active = true;
-  if (g_status_label) {
-    lv_label_set_text(g_status_label, "Scanning…");
-  }
+  update_scan_status_label();
   refresh_empty_state();
 }
 
@@ -359,7 +354,6 @@ static void set_top_band_state(top_band_state_t state)
           lv_obj_add_state(btn, LV_STATE_DISABLED);
         }
       }
-      update_scanning_banner();
       break;
     case TOP_STATE_IDLE:
     default:
@@ -370,7 +364,6 @@ static void set_top_band_state(top_band_state_t state)
         lv_label_set_text(g_status_label, "Press Scan to search for BLE devices.");
       }
       ui_bottom_button_restore();
-      update_scanning_banner();
       break;
   }
 }
@@ -471,20 +464,6 @@ static void align_empty_label(void)
   lv_obj_align_to(g_empty_label, g_device_list, LV_ALIGN_CENTER, 0, 0);
 }
 
-static void update_scanning_banner(void)
-{
-  if (!g_scanning_label) return;
-
-  if (g_scan_active && g_scan_remaining_ms > 0) {
-    uint32_t remaining_s = (g_scan_remaining_ms + 999) / 1000;
-    lv_label_set_text_fmt(g_scanning_label, "Scanning (%lus)…", static_cast<unsigned long>(remaining_s));
-  } else if (g_scan_active) {
-    lv_label_set_text(g_scanning_label, "Finishing scan…");
-  } else {
-    lv_label_set_text(g_scanning_label, "Ready");
-  }
-}
-
 static void start_scan_timer(uint32_t duration_ms)
 {
   g_scan_remaining_ms = duration_ms;
@@ -505,16 +484,21 @@ static void stop_scan_timer(void)
     lv_timer_pause(g_scan_timer);
   }
   g_scan_remaining_ms = 0;
-  update_scanning_banner();
+  update_scan_status_label();
 }
 
 static void update_scan_status_label(void)
 {
-  if (g_scan_active && g_status_label) {
-    uint32_t remaining_s = (g_scan_remaining_ms + 999) / 1000;
-    lv_label_set_text_fmt(g_status_label, "Scanning (%lus)…", static_cast<unsigned long>(remaining_s));
+  if (!g_status_label) return;
+
+  if (g_scan_active) {
+    if (g_scan_remaining_ms > 0) {
+      uint32_t remaining_s = (g_scan_remaining_ms + 999) / 1000;
+      lv_label_set_text_fmt(g_status_label, "Scanning (%lus)…", static_cast<unsigned long>(remaining_s));
+    } else {
+      lv_label_set_text(g_status_label, "Finishing scan…");
+    }
   }
-  update_scanning_banner();
 }
 
 static void scan_timer_cb(lv_timer_t* timer)
@@ -526,7 +510,7 @@ static void scan_timer_cb(lv_timer_t* timer)
   if (g_scan_remaining_ms <= 1000) {
     g_scan_remaining_ms = 0;
     stop_scan_timer();
-    update_scanning_banner();
+    update_scan_status_label();
     return;
   }
 

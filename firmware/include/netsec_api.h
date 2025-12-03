@@ -21,8 +21,9 @@ typedef struct {
 
 /* BLE device result structure */
 typedef struct {
-    char name[32];              // Device name (null-terminated)
-    uint8_t addr[6];            // BLE MAC address
+    char name[32];              // Device name (UTF-8, max 31 chars + NUL)
+    char mac_str[18];           // Colon-separated MAC string ("AA:BB:CC:DD:EE:FF")
+    uint8_t mac_bytes[6];       // Raw 6-byte MAC address
     int8_t rssi;                // RSSI signal strength
     uint32_t flags;             // Bitmask describing advertisement/properties
 } netsec_ble_device_t;
@@ -39,8 +40,9 @@ typedef enum {
     NETSEC_RES_NONE = 0,
     NETSEC_RES_WIFI_AP,          // WiFi AP found
     NETSEC_RES_WIFI_SCAN_DONE,   // WiFi scan complete
+    NETSEC_RES_BLE_SCAN_STARTED, // BLE scan started
     NETSEC_RES_BLE_DEVICE_FOUND, // BLE device found
-    NETSEC_RES_BLE_SCAN_DONE,    // BLE scan complete
+    NETSEC_RES_BLE_SCAN_COMPLETED, // BLE scan complete
 } netsec_result_type_t;
 
 /* NETSEC result structure sent via queue */
@@ -49,7 +51,7 @@ typedef struct {
     union {
         netsec_wifi_ap_t wifi_ap;
         netsec_ble_device_t ble_device;
-        netsec_scan_summary_t scan_summary; // Populated for *_SCAN_DONE events
+        netsec_scan_summary_t scan_summary; // Populated for BLE/WiFi scan lifecycle events
     } data;
 } netsec_result_t;
 

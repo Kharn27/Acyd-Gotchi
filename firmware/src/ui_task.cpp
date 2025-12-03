@@ -28,7 +28,7 @@ static ble_ui_state_t g_ble_ui_state = BLE_UI_STATE_IDLE;
 
 static void ui_handle_ble_duration_selection(uint32_t duration_s)
 {
-  ui_ble_set_state_scanning(duration_s);
+  ui_ble_set_state_scanning(duration_s * 1000);
   g_ble_ui_state = BLE_UI_STATE_SCANNING;
 
   if (netsec_command_queue) {
@@ -70,11 +70,16 @@ void ui_task(void * pvParameters)
         case NETSEC_RES_WIFI_SCAN_DONE:
           ui_wifi_handle_scan_done();
           break;
+        case NETSEC_RES_BLE_SCAN_STARTED:
+          ui_ble_handle_scan_started(&netsec_res.data.scan_summary);
+          g_ble_ui_state = BLE_UI_STATE_SCANNING;
+          break;
         case NETSEC_RES_BLE_DEVICE_FOUND:
           ui_ble_handle_device_found(&netsec_res.data.ble_device);
           break;
-        case NETSEC_RES_BLE_SCAN_DONE:
-          ui_post_event(UI_EVENT_BLE_SCAN_DONE);
+        case NETSEC_RES_BLE_SCAN_COMPLETED:
+          ui_ble_handle_scan_completed(&netsec_res.data.scan_summary);
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
         default:
           break;
@@ -141,7 +146,7 @@ void ui_task(void * pvParameters)
 
         case UI_EVENT_BLE_SCAN_DONE:
           Serial.println("UI Event: BLE scan done");
-          ui_ble_handle_scan_done();
+          ui_ble_handle_scan_completed(NULL);
           g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
 

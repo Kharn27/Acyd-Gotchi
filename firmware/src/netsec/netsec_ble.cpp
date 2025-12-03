@@ -2,6 +2,7 @@
 #include "netsec_api.h"
 #include <Arduino.h>
 #include <string>
+#include <stdio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/timers.h>
@@ -38,13 +39,13 @@ class NetsecBLEAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 };
 #endif
 
-static void netsec_ble_post_scan_done(uint16_t device_count, uint32_t duration_ms) {
+static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t device_count, uint32_t duration_ms) {
   extern QueueHandle_t netsec_result_queue;
   if (!netsec_result_queue) return;
 
   netsec_result_t res;
   memset(&res, 0, sizeof(res));
-  res.type = NETSEC_RES_BLE_SCAN_DONE;
+  res.type = type;
   res.data.scan_summary.item_count = device_count;
   res.data.scan_summary.duration_ms = duration_ms;
   res.data.scan_summary.timestamp_ms = millis();
@@ -60,7 +61,7 @@ static void netsec_ble_finalize_scan(void) {
 #endif
 
   uint32_t elapsed_ms = s_ble_scan_start_ms ? (millis() - s_ble_scan_start_ms) : 0;
-  netsec_ble_post_scan_done(s_ble_devices_reported, elapsed_ms);
+  netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_COMPLETED, s_ble_devices_reported, elapsed_ms);
 
   s_ble_scan_running = false;
   s_ble_scan_task = nullptr;
@@ -146,6 +147,7 @@ void netsec_ble_start_scan(uint32_t duration_ms)
   s_ble_devices_reported = 0;
   s_ble_scan_start_ms = millis();
   s_ble_scan_running = true;
+  netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_STARTED, 0, duration_ms);
 
   if (s_ble_scan_timer) {
     xTimerStop(s_ble_scan_timer, 0);
@@ -203,7 +205,10 @@ void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uin
   memset(device_slot, 0, sizeof(*device_slot));
   strncpy(device_slot->name, name ? name : "", sizeof(device_slot->name) - 1);
   if (addr) {
-    memcpy(device_slot->addr, addr, sizeof(device_slot->addr));
+    memcpy(device_slot->mac_bytes, addr, sizeof(device_slot->mac_bytes));
+    snprintf(device_slot->mac_str, sizeof(device_slot->mac_str), "%02X:%02X:%02X:%02X:%02X:%02X",
+             device_slot->mac_bytes[0], device_slot->mac_bytes[1], device_slot->mac_bytes[2],
+             device_slot->mac_bytes[3], device_slot->mac_bytes[4], device_slot->mac_bytes[5]);
   }
   device_slot->rssi = static_cast<int8_t>(rssi);
   device_slot->flags = flags;

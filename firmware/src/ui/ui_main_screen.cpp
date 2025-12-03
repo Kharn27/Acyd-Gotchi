@@ -143,6 +143,7 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_style_pad_all(g_bottom_band, PAD_SMALL, 0);
   lv_obj_set_flex_flow(g_bottom_band, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(g_bottom_band, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_clear_flag(g_bottom_band, LV_OBJ_FLAG_SCROLLABLE);
 
   // Uptime label
   g_label_uptime = lv_label_create(g_bottom_band);
@@ -152,15 +153,14 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT), 0);
   lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_LEFT, 0);
   lv_obj_set_style_pad_left(g_label_uptime, PAD_SMALL, 0);
-  lv_obj_set_width(g_label_uptime, LV_PCT(100));
-  lv_obj_set_flex_grow(g_label_uptime, 2);
+  lv_obj_set_width(g_label_uptime, LV_SIZE_CONTENT);
+  lv_obj_set_flex_grow(g_label_uptime, 1);
 
   // Menu button
   g_bottom_button = lv_btn_create(g_bottom_band);
   lv_obj_set_size(g_bottom_button, BUTTON_WIDTH, BUTTON_HEIGHT);
   lv_obj_add_style(g_bottom_button, ui_get_style_btn_primary(), 0);
   lv_obj_add_event_cb(g_bottom_button, dispatch_bottom_button, LV_EVENT_CLICKED, NULL);
-  lv_obj_set_flex_grow(g_bottom_button, 1);
 
   g_bottom_button_label = lv_label_create(g_bottom_button);
   lv_obj_center(g_bottom_button_label);

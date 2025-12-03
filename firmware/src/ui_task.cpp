@@ -82,6 +82,10 @@ void ui_task(void * pvParameters)
           ui_ble_handle_scan_completed(&netsec_res.data.scan_summary);
           g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
+        case NETSEC_RES_BLE_SCAN_CANCELED:
+          ui_ble_cancel_scan();
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
+          break;
         default:
           break;
       }

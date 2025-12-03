@@ -42,7 +42,8 @@ typedef enum {
     NETSEC_RES_WIFI_SCAN_DONE,   // WiFi scan complete
     NETSEC_RES_BLE_SCAN_STARTED, // BLE scan started
     NETSEC_RES_BLE_DEVICE_FOUND, // BLE device found
-    NETSEC_RES_BLE_SCAN_COMPLETED, // BLE scan complete
+    NETSEC_RES_BLE_SCAN_COMPLETED, // BLE scan complete (duration reached)
+    NETSEC_RES_BLE_SCAN_CANCELED,  // BLE scan canceled by user
 } netsec_result_type_t;
 
 /* NETSEC result structure sent via queue */

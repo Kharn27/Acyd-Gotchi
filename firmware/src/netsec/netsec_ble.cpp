@@ -25,7 +25,7 @@ static size_t s_ble_device_write_idx = 0;
 static uint32_t s_ble_scan_start_ms = 0;
 static uint16_t s_ble_devices_reported = 0;
 static bool s_bt_classic_mem_released = false;
-static constexpr size_t NETSEC_BLE_MIN_HEAP_BYTES = 70 * 1024;
+static constexpr size_t NETSEC_BLE_MIN_HEAP_BYTES = 50 * 1024;
 
 static bool netsec_ble_check_heap(void) {
 #if defined(ARDUINO_ARCH_ESP32)

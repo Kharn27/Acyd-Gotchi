@@ -39,6 +39,10 @@ void ui_ble_cancel_scan(void);
 // Create settings screen (placeholder)
 lv_obj_t* ui_create_settings_screen(void);
 
+// Create monitoring screen (system stats)
+lv_obj_t* ui_create_monitor_screen(void);
+void ui_set_screen_state_to_monitor(void);
+
 // Load a screen (switch display to given object)
 void ui_load_screen(lv_obj_t* screen);
 

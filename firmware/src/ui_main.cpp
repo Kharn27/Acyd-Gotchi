@@ -20,6 +20,7 @@ static lv_obj_t* g_main_screen = NULL;
 static lv_obj_t* g_wifi_screen = NULL;
 static lv_obj_t* g_ble_screen = NULL;
 static lv_obj_t* g_settings_screen = NULL;
+static lv_obj_t* g_monitor_screen = NULL;
 
 // Implementation of ui_api.h functions
 void ui_init(QueueHandle_t ui_queue)
@@ -108,6 +109,18 @@ void ui_show_settings_screen(void)
 
   ui_set_screen_state_to_settings();
   ui_load_screen(g_settings_screen);
+}
+
+void ui_show_monitor_screen(void)
+{
+  Serial.println("PIXEL: Showing Monitor screen");
+
+  if (!g_monitor_screen) {
+    g_monitor_screen = ui_create_monitor_screen();
+  }
+
+  ui_set_screen_state_to_monitor();
+  ui_load_screen(g_monitor_screen);
 }
 
 void ui_update_pet(uint32_t delta_ms)

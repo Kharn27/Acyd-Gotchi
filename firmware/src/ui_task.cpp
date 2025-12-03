@@ -113,6 +113,11 @@ void ui_task(void * pvParameters)
           g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
 
+        case UI_EVENT_BUTTON_MONITOR:
+          Serial.println("UI Event: Monitor button pressed");
+          ui_show_monitor_screen();
+          break;
+
         case UI_EVENT_BUTTON_MENU:
           Serial.println("UI Event: Menu button pressed");
           ui_show_settings_screen();

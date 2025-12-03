@@ -21,4 +21,3 @@ void netsec_task(void* pvParameters);
 extern QueueHandle_t ui_event_queue;          // UI posts events from buttons
 extern QueueHandle_t netsec_command_queue;    // UI sends commands to NETSEC
 extern QueueHandle_t netsec_result_queue;     // NETSEC sends scan results back
-

@@ -62,7 +62,7 @@ typedef enum {
     NETSEC_CMD_WIFI_SCAN_STOP,
     NETSEC_CMD_BLE_SCAN_START,
     NETSEC_CMD_BLE_SCAN_STOP,
-    NETSEC_CMD_BLE_SCAN_CANCEL = NETSEC_CMD_BLE_SCAN_STOP, // Alias for compatibility
+    NETSEC_CMD_BLE_SCAN_CANCEL, // Alias for compatibility
 } netsec_command_type_t;
 
 typedef struct {

@@ -116,11 +116,11 @@ lv_obj_t* ui_create_ble_screen(void)
   g_duration_container = lv_obj_create(band_top);
   lv_obj_set_style_bg_opa(g_duration_container, LV_OPA_TRANSP, 0);
   lv_obj_set_style_border_width(g_duration_container, 0, 0);
-  lv_obj_set_flex_flow(g_duration_container, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_flow(g_duration_container, LV_FLEX_FLOW_ROW_WRAP);
   lv_obj_set_flex_align(g_duration_container, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_set_style_pad_gap(g_duration_container, PAD_SMALL, 0);
+  lv_obj_set_style_pad_gap(g_duration_container, PAD_TINY, 0);
   lv_obj_set_style_pad_all(g_duration_container, 0, 0);
-  lv_obj_set_size(g_duration_container, LV_SIZE_CONTENT, LV_PCT(100));
+  lv_obj_set_size(g_duration_container, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_add_flag(g_duration_container, LV_OBJ_FLAG_HIDDEN);
 
   const int durations[] = {10, 20, 30};
@@ -343,6 +343,7 @@ static void set_top_band_state(top_band_state_t state)
       ui_bottom_button_set("Cancel", on_cancel_btn_click);
       for (lv_obj_t* btn : g_duration_buttons) {
         if (btn) {
+          lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
           lv_obj_clear_state(btn, LV_STATE_DISABLED);
         }
       }
@@ -354,6 +355,7 @@ static void set_top_band_state(top_band_state_t state)
       ui_bottom_button_set("Cancel", on_cancel_btn_click);
       for (lv_obj_t* btn : g_duration_buttons) {
         if (btn) {
+          lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
           lv_obj_add_state(btn, LV_STATE_DISABLED);
         }
       }

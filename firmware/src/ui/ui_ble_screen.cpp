@@ -335,6 +335,23 @@ void ui_ble_handle_scan_completed(const netsec_scan_summary_t* meta)
   refresh_empty_state();
 }
 
+void ui_ble_handle_scan_error_memory(void)
+{
+  g_scan_active = false;
+  stop_scan_timer();
+  g_scan_remaining_ms = 0;
+
+  if (g_status_label) {
+    lv_label_set_text(g_status_label, "Mémoire insuffisante pour lancer un scan BLE.");
+  }
+
+  set_top_band_state(TOP_STATE_IDLE);
+  if (g_ble_scan_button) {
+    lv_obj_clear_state(g_ble_scan_button, LV_STATE_DISABLED);
+  }
+  refresh_empty_state();
+}
+
 static void on_scan_btn_click(lv_event_t* e)
 {
   (void)e;

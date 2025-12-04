@@ -11,6 +11,9 @@
 #include "lvgl.h"
 
 #include <Arduino.h>
+#if defined(ARDUINO_ARCH_ESP32)
+#include <esp_heap_caps.h>
+#endif
 #include <stdio.h>
 
 // Screen references
@@ -264,13 +267,23 @@ static void wallpaper_timer_cb(lv_timer_t* timer)
 void ui_load_screen(lv_obj_t* screen)
 {
   if (screen == NULL) return;
-  
-  lv_disp_t* disp = lv_disp_get_default();
-  if (disp) {
-    lv_disp_load_scr(screen);
-    g_active_screen = screen;
-    Serial.println("PIXEL: Screen loaded");
+
+  lv_obj_t* old_screen = lv_scr_act();
+  lv_scr_load(screen);
+
+  if (old_screen != NULL && old_screen != screen) {
+    lv_obj_del(old_screen);
   }
+
+  g_active_screen = screen;
+
+#if defined(ARDUINO_ARCH_ESP32)
+  Serial.printf("[UI] After screen load/free: free=%u largest=%u\n",
+                static_cast<unsigned>(heap_caps_get_free_size(MALLOC_CAP_8BIT)),
+                static_cast<unsigned>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)));
+#else
+  Serial.println("PIXEL: Screen loaded");
+#endif
 }
 
 lv_obj_t* ui_get_active_screen(void)

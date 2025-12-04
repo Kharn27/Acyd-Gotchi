@@ -16,5 +16,5 @@ void netsec_init(QueueHandle_t result_queue);
 void netsec_task(void* pvParameters);
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif

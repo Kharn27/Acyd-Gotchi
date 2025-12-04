@@ -10,6 +10,9 @@
 #if defined(ARDUINO_ARCH_ESP32)
 #include <BLEDevice.h>
 #include <BLEScan.h>
+#include <esp_bt.h>
+#include <esp_bt_main.h>
+#include <esp_heap_caps.h>
 #endif
 
 static BLEScan* s_ble_scan = nullptr;
@@ -21,10 +24,43 @@ static netsec_ble_device_t s_ble_devices[NETSEC_BLE_DEVICE_BUFFER_SIZE];
 static size_t s_ble_device_write_idx = 0;
 static uint32_t s_ble_scan_start_ms = 0;
 static uint16_t s_ble_devices_reported = 0;
+static bool s_bt_classic_mem_released = false;
+static constexpr size_t NETSEC_BLE_MIN_HEAP_BYTES = 50 * 1024;
+
+static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t device_count, uint32_t duration_ms);
+
+static bool netsec_ble_check_heap(void) {
+#if defined(ARDUINO_ARCH_ESP32)
+  const size_t free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+  const size_t largest_8bit = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+  Serial.printf("[NETSEC:BLE] Heap free=%u bytes, largest=%u bytes\n",
+                static_cast<unsigned>(free_8bit),
+                static_cast<unsigned>(largest_8bit));
+  if (free_8bit < NETSEC_BLE_MIN_HEAP_BYTES || largest_8bit < (NETSEC_BLE_MIN_HEAP_BYTES / 2)) {
+    Serial.println("[NETSEC:BLE] Not enough heap for BLE init, aborting scan");
+    netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_ERROR_MEMORY, 0, 0);
+    return false;
+  }
+#endif
+  return true;
+}
 
 enum {
   NETSEC_BLE_NOTIFY_CANCEL = 1 << 0,
 };
+
+static const char* netsec_ble_result_type_str(netsec_result_type_t type) {
+  switch (type) {
+    case NETSEC_RES_BLE_SCAN_STARTED: return "BLE_SCAN_STARTED";
+    case NETSEC_RES_BLE_DEVICE_FOUND: return "BLE_DEVICE_FOUND";
+    case NETSEC_RES_BLE_SCAN_COMPLETED: return "BLE_SCAN_COMPLETED";
+    case NETSEC_RES_BLE_SCAN_CANCELED: return "BLE_SCAN_CANCELED";
+    case NETSEC_RES_BLE_SCAN_ERROR_MEMORY: return "BLE_SCAN_ERROR_MEMORY";
+    case NETSEC_RES_WIFI_AP: return "WIFI_AP";
+    case NETSEC_RES_WIFI_SCAN_DONE: return "WIFI_SCAN_DONE";
+    default: return "UNKNOWN";
+  }
+}
 
 static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t device_count, uint32_t duration_ms) {
   extern QueueHandle_t netsec_result_queue;
@@ -36,7 +72,13 @@ static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t devic
   res.data.scan_summary.item_count = device_count;
   res.data.scan_summary.duration_ms = duration_ms;
   res.data.scan_summary.timestamp_ms = millis();
-  xQueueSend(netsec_result_queue, &res, 0);
+  BaseType_t queued = xQueueSend(netsec_result_queue, &res, 0);
+  Serial.printf("[NETSEC:BLE] Event queued: %s count=%u duration=%lu ms ts=%lu (%s)\n",
+                netsec_ble_result_type_str(type),
+                static_cast<unsigned>(device_count),
+                static_cast<unsigned long>(duration_ms),
+                static_cast<unsigned long>(res.data.scan_summary.timestamp_ms),
+                queued == pdTRUE ? "ok" : "queue full");
 }
 
 static void netsec_ble_finalize_scan(bool canceled) {
@@ -71,6 +113,7 @@ static void netsec_ble_finalize_scan(bool canceled) {
 #if defined(ARDUINO_ARCH_ESP32)
 static void netsec_ble_timeout_cb(TimerHandle_t xTimer) {
   (void)xTimer;
+  Serial.println("[NETSEC:BLE] Scan timeout reached, signaling cancel");
   if (s_ble_scan_task) {
     s_ble_scan_running = false;
     xTaskNotify(s_ble_scan_task, NETSEC_BLE_NOTIFY_CANCEL, eSetBits);
@@ -110,10 +153,14 @@ static void netsec_ble_scan_task(void* pvParameters) {
           flags);
     }
     s_ble_scan->clearResults();
+    Serial.printf("[NETSEC:BLE] Scan slice: %d advs, total reported=%u\n",
+                  found,
+                  static_cast<unsigned>(s_ble_devices_reported));
 
     uint32_t notify_value = 0;
     if (xTaskNotifyWait(0, NETSEC_BLE_NOTIFY_CANCEL, &notify_value, 0) == pdTRUE) {
       if (notify_value & NETSEC_BLE_NOTIFY_CANCEL) {
+        Serial.println("[NETSEC:BLE] Cancel notification received");
         canceled = s_ble_cancel_requested;
         break;
       }
@@ -145,9 +192,25 @@ void netsec_ble_start_scan(uint32_t duration_ms)
     netsec_ble_stop_scan();
   }
 
+  if (!netsec_ble_check_heap()) {
+    return;
+  }
+
   if (!s_ble_scan) {
+    Serial.println("[NETSEC:BLE] Initializing BLE stack");
+#if defined(ARDUINO_ARCH_ESP32)
+    if (!s_bt_classic_mem_released) {
+      esp_err_t rel = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+      Serial.printf("[NETSEC:BLE] Release classic BT mem: %s\n", rel == ESP_OK ? "ok" : "error");
+      s_bt_classic_mem_released = true;
+    }
+#endif
     BLEDevice::init("");
     s_ble_scan = BLEDevice::getScan();
+    if (!s_ble_scan) {
+      Serial.println("[NETSEC:BLE] BLEDevice::getScan() returned null, aborting scan");
+      return;
+    }
     s_ble_scan->setActiveScan(true);
     s_ble_scan->setInterval(100);
     s_ble_scan->setWindow(99);
@@ -168,11 +231,15 @@ void netsec_ble_start_scan(uint32_t duration_ms)
                                   pdFALSE,
                                   nullptr,
                                   netsec_ble_timeout_cb);
-  if (s_ble_scan_timer) {
-    xTimerStart(s_ble_scan_timer, 0);
+  if (!s_ble_scan_timer) {
+    Serial.println("[NETSEC:BLE] Failed to create scan timeout timer");
+  } else if (xTimerStart(s_ble_scan_timer, 0) != pdPASS) {
+    Serial.println("[NETSEC:BLE] Failed to start scan timeout timer");
+  } else {
+    Serial.println("[NETSEC:BLE] Scan timeout timer armed");
   }
 
-  xTaskCreatePinnedToCore(
+  BaseType_t task_status = xTaskCreatePinnedToCore(
       netsec_ble_scan_task,
       "ble_scan",
       4096,
@@ -180,6 +247,12 @@ void netsec_ble_start_scan(uint32_t duration_ms)
       1,
       &s_ble_scan_task,
       0);
+  if (task_status != pdPASS || !s_ble_scan_task) {
+    Serial.println("[NETSEC:BLE] Failed to create scan task");
+    netsec_ble_finalize_scan(true);
+  } else {
+    Serial.println("[NETSEC:BLE] BLE scan task created");
+  }
 #else
   Serial.println("[NETSEC:BLE] BLE not supported on this platform (mock)");
 #endif
@@ -200,6 +273,7 @@ void netsec_ble_stop_scan(void)
   s_ble_cancel_requested = true;
   if (s_ble_scan_task) {
     xTaskNotify(s_ble_scan_task, NETSEC_BLE_NOTIFY_CANCEL, eSetBits);
+    Serial.println("[NETSEC:BLE] Cancel signal sent to scan task");
   }
   // Cleanup will be performed by the scan task to avoid race conditions.
 #endif
@@ -238,6 +312,8 @@ void netsec_ble_post_device(const char* name, int rssi, const uint8_t* addr, uin
     ++s_ble_devices_reported;
   }
 
-  xQueueSend(netsec_result_queue, &res, 0);
+  BaseType_t queued = xQueueSend(netsec_result_queue, &res, 0);
+  if (queued != pdTRUE) {
+    Serial.println("[NETSEC:BLE] Failed to queue device event (queue full?)");
+  }
 }
-

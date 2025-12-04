@@ -8,6 +8,7 @@
 #include "board_config.h"
 #include "ui_api.h"
 #include "netsec_api.h"
+#include "netsec/netsec_core.h"
 
 // Global queue handles for inter-task communication
 QueueHandle_t ui_event_queue = NULL;
@@ -17,7 +18,6 @@ QueueHandle_t netsec_result_queue = NULL;
 // Forward declarations of task implementations (will be filled in later)
 // These are weak symbols to allow PIXEL and NETSEC to override if not yet implemented.
 extern void ui_task(void* pvParameters);
-extern void netsec_task(void* pvParameters);
 
 /**
  * ARCHI-internal: Initialize board-level hardware.

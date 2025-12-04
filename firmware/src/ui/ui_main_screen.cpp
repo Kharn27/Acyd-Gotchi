@@ -11,6 +11,9 @@
 #include "lvgl.h"
 
 #include <Arduino.h>
+#if defined(ARDUINO_ARCH_ESP32)
+#include <esp_heap_caps.h>
+#endif
 #include <stdio.h>
 
 // Screen references
@@ -28,6 +31,7 @@ enum active_screen_state {
   UI_SCREEN_STATE_WIFI,
   UI_SCREEN_STATE_BLE,
   UI_SCREEN_STATE_SETTINGS,
+  UI_SCREEN_STATE_MONITOR,
 };
 
 static active_screen_state g_screen_state = UI_SCREEN_STATE_MAIN;
@@ -36,6 +40,7 @@ static lv_event_cb_t g_bottom_button_handler = NULL;
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
 static void on_ble_btn_click(lv_event_t* e);
+static void on_monitor_btn_click(lv_event_t* e);
 static void on_menu_btn_click(lv_event_t* e);
 static void on_back_btn_click(lv_event_t* e);
 static void update_uptime_cb(lv_timer_t* timer);
@@ -92,6 +97,18 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_center(label_ble);
   lv_obj_add_style(label_ble, ui_get_style_label_normal(), 0);
   lv_obj_set_style_text_color(label_ble, lv_color_hex(COLOR_TEXT), 0);
+
+  // Monitor button
+  lv_obj_t* btn_monitor = lv_btn_create(band_top);
+  lv_obj_set_size(btn_monitor, 50, 30);
+  lv_obj_add_style(btn_monitor, ui_get_style_btn_primary(), 0);
+  lv_obj_add_event_cb(btn_monitor, on_monitor_btn_click, LV_EVENT_CLICKED, NULL);
+
+  lv_obj_t* label_monitor = lv_label_create(btn_monitor);
+  lv_label_set_text(label_monitor, "SYS");
+  lv_obj_center(label_monitor);
+  lv_obj_add_style(label_monitor, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(label_monitor, lv_color_hex(COLOR_TEXT), 0);
   
   // === CENTRAL PET AREA ===
   int pet_start_y = BAND_HEIGHT + PAD_LARGE;
@@ -193,6 +210,13 @@ static void on_ble_btn_click(lv_event_t* e)
   ui_post_event(UI_EVENT_BUTTON_BLE);
 }
 
+static void on_monitor_btn_click(lv_event_t* e)
+{
+  (void)e;
+  Serial.println("PIXEL: Monitor button clicked");
+  ui_post_event(UI_EVENT_BUTTON_MONITOR);
+}
+
 static void on_menu_btn_click(lv_event_t* e)
 {
   (void)e;
@@ -243,13 +267,23 @@ static void wallpaper_timer_cb(lv_timer_t* timer)
 void ui_load_screen(lv_obj_t* screen)
 {
   if (screen == NULL) return;
-  
-  lv_disp_t* disp = lv_disp_get_default();
-  if (disp) {
-    lv_disp_load_scr(screen);
-    g_active_screen = screen;
-    Serial.println("PIXEL: Screen loaded");
+
+  lv_obj_t* old_screen = lv_scr_act();
+  lv_scr_load(screen);
+
+  if (old_screen != NULL && old_screen != screen) {
+    lv_obj_del(old_screen);
   }
+
+  g_active_screen = screen;
+
+#if defined(ARDUINO_ARCH_ESP32)
+  Serial.printf("[UI] After screen load/free: free=%u largest=%u\n",
+                static_cast<unsigned>(heap_caps_get_free_size(MALLOC_CAP_8BIT)),
+                static_cast<unsigned>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)));
+#else
+  Serial.println("PIXEL: Screen loaded");
+#endif
 }
 
 lv_obj_t* ui_get_active_screen(void)
@@ -281,6 +315,7 @@ static void apply_bottom_button_state(void)
     case UI_SCREEN_STATE_WIFI:
     case UI_SCREEN_STATE_BLE:
     case UI_SCREEN_STATE_SETTINGS:
+    case UI_SCREEN_STATE_MONITOR:
       update_bottom_button("Back", on_back_btn_click);
       break;
   }
@@ -320,3 +355,8 @@ void ui_set_screen_state_to_settings(void)
   apply_bottom_button_state();
 }
 
+void ui_set_screen_state_to_monitor(void)
+{
+  g_screen_state = UI_SCREEN_STATE_MONITOR;
+  apply_bottom_button_state();
+}

@@ -21,6 +21,7 @@ typedef enum {
     UI_EVENT_SELECT_ENTRY,   // Generic list selection
     UI_EVENT_BACK,           // Back or escape navigation
     UI_EVENT_UPDATE_PET,     // Periodic pet refresh
+    UI_EVENT_BUTTON_MONITOR, // Top bar monitor/stats button
 } ui_event_t;
 
 typedef void (*ui_event_router_t)(ui_event_t event);
@@ -73,6 +74,11 @@ void ui_show_ble_screen(void);
  * Called when user taps Menu.
  */
 void ui_show_settings_screen(void);
+
+/**
+ * Display the system monitoring screen.
+ */
+void ui_show_monitor_screen(void);
 
 /**
  * Update the pet animation (called periodically from ui_task).

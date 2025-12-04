@@ -86,6 +86,10 @@ void ui_task(void * pvParameters)
           ui_ble_cancel_scan();
           g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
+        case NETSEC_RES_BLE_SCAN_ERROR_MEMORY:
+          ui_ble_handle_scan_error_memory();
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
+          break;
         default:
           break;
       }
@@ -111,6 +115,11 @@ void ui_task(void * pvParameters)
           ui_show_ble_screen();
           ui_ble_set_state_idle();
           g_ble_ui_state = BLE_UI_STATE_IDLE;
+          break;
+
+        case UI_EVENT_BUTTON_MONITOR:
+          Serial.println("UI Event: Monitor button pressed");
+          ui_show_monitor_screen();
           break;
 
         case UI_EVENT_BUTTON_MENU:

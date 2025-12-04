@@ -3,6 +3,11 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+/* Use C linkage for task entry points and shared queues */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Task prototypes and inter-task communication handles.
 // Tasks are started in system_init.cpp.
 
@@ -22,3 +27,6 @@ extern QueueHandle_t ui_event_queue;          // UI posts events from buttons
 extern QueueHandle_t netsec_command_queue;    // UI sends commands to NETSEC
 extern QueueHandle_t netsec_result_queue;     // NETSEC sends scan results back
 
+#ifdef __cplusplus
+} // extern "C"
+#endif

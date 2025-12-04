@@ -14,6 +14,17 @@
 
 static QueueHandle_t local_result_queue = NULL;
 
+static const char* netsec_cmd_str(netsec_command_type_t type) {
+    switch (type) {
+        case NETSEC_CMD_WIFI_SCAN_START: return "WIFI_SCAN_START";
+        case NETSEC_CMD_WIFI_SCAN_STOP: return "WIFI_SCAN_STOP";
+        case NETSEC_CMD_BLE_SCAN_START: return "BLE_SCAN_START";
+        case NETSEC_CMD_BLE_SCAN_STOP: return "BLE_SCAN_STOP";
+        case NETSEC_CMD_BLE_SCAN_CANCEL: return "BLE_SCAN_CANCEL";
+       default: return "UNKNOWN";
+    }
+}
+
 void netsec_init(QueueHandle_t result_queue) {
     Serial.println("[NETSEC] Network security module initialized");
     local_result_queue = result_queue;
@@ -67,6 +78,7 @@ void netsec_task(void* pvParameters) {
     netsec_command_t cmd;
     for (;;) {
         if (xQueueReceive(netsec_command_queue, &cmd, pdMS_TO_TICKS(1000)) == pdTRUE) {
+            Serial.printf("[NETSEC] Command received: %s\n", netsec_cmd_str(cmd.type));
             switch (cmd.type) {
                 case NETSEC_CMD_WIFI_SCAN_START:
                     netsec_start_wifi_scan();
@@ -79,6 +91,8 @@ void netsec_task(void* pvParameters) {
                         Serial.println("[NETSEC] BLE scan already running, stopping before restart");
                         netsec_stop_ble_scan();
                     }
+                    Serial.printf("[NETSEC] BLE scan duration=%lu ms\n",
+                                  static_cast<unsigned long>(cmd.data.ble_scan_start.duration_ms));
                     netsec_start_ble_scan(cmd.data.ble_scan_start.duration_ms);
                     break;
                 case NETSEC_CMD_BLE_SCAN_CANCEL:

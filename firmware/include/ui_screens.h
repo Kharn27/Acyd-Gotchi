@@ -29,6 +29,7 @@ void ui_ble_prepare_for_scan(uint32_t duration_ms);
 void ui_ble_handle_device_found(const netsec_ble_device_t* device);
 void ui_ble_handle_scan_started(const netsec_scan_summary_t* meta);
 void ui_ble_handle_scan_completed(const netsec_scan_summary_t* meta);
+void ui_ble_handle_scan_error_memory(void);
 uint32_t ui_ble_get_last_scan_duration_ms(void);
 void ui_ble_set_state_idle(void);
 void ui_ble_set_state_choosing_duration(void);
@@ -38,6 +39,10 @@ void ui_ble_cancel_scan(void);
 
 // Create settings screen (placeholder)
 lv_obj_t* ui_create_settings_screen(void);
+
+// Create monitoring screen (system stats)
+lv_obj_t* ui_create_monitor_screen(void);
+void ui_set_screen_state_to_monitor(void);
 
 // Load a screen (switch display to given object)
 void ui_load_screen(lv_obj_t* screen);

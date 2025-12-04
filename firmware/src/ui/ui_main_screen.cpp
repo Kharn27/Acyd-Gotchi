@@ -11,33 +11,20 @@
 #include "lvgl.h"
 
 #include <Arduino.h>
-#if defined(ARDUINO_ARCH_ESP32)
-#include <esp_heap_caps.h>
-#endif
 #include <stdio.h>
 
 // Screen references
-static lv_obj_t* g_main_screen = NULL;
-static lv_obj_t* g_active_screen = NULL;
 static lv_obj_t* g_label_uptime = NULL;
 static lv_obj_t* g_bg_img = NULL;
 static uint8_t g_bg_index = 1;
 static lv_obj_t* g_bottom_band = NULL;
 static lv_obj_t* g_bottom_button = NULL;
 static lv_obj_t* g_bottom_button_label = NULL;
-
-enum active_screen_state {
-  UI_SCREEN_STATE_MAIN,
-  UI_SCREEN_STATE_WIFI,
-  UI_SCREEN_STATE_BLE,
-  UI_SCREEN_STATE_SETTINGS,
-  UI_SCREEN_STATE_MONITOR,
-};
-
-static active_screen_state g_screen_state = UI_SCREEN_STATE_MAIN;
+static lv_timer_t* g_timer_uptime = NULL;
+static lv_timer_t* g_timer_wallpaper = NULL;
+static bool g_bottom_bar_initialized = false;
+static ui_screen_id_t g_bottom_state = UI_SCREEN_MAIN;
 static lv_event_cb_t g_bottom_button_handler = NULL;
-// Référence vers le screen actuel
-static lv_obj_t* g_current_screen = NULL;
 
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
@@ -50,8 +37,9 @@ static void wallpaper_timer_cb(lv_timer_t* timer);
 static void update_bottom_button(const char* label, lv_event_cb_t handler);
 static void dispatch_bottom_button(lv_event_t* e);
 static void apply_bottom_button_state(void);
+static void ensure_bottom_band(void);
 
-lv_obj_t* ui_create_main_screen(void)
+lv_obj_t* ui_build_main_screen(void)
 {
   // Create main screen container
   lv_obj_t* scr = lv_obj_create(NULL);
@@ -149,49 +137,12 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_add_style(label_status, ui_get_style_label_normal(), 0);
   lv_obj_add_style(label_status, &label_status_bg_style, 0);
   lv_obj_set_style_text_color(label_status, lv_color_hex(COLOR_TEXT), 0);
-  
+
   // === BOTTOM BUTTON BAND ===
-  int band_bottom_y = LV_VER_RES - BAND_HEIGHT;
-  
-  g_bottom_band = lv_obj_create(lv_layer_top());
-  lv_obj_set_size(g_bottom_band, LV_HOR_RES, BAND_HEIGHT);
-  lv_obj_set_pos(g_bottom_band, 0, band_bottom_y);
-  lv_obj_set_style_bg_color(g_bottom_band, lv_color_hex(COLOR_SURFACE), 0);
-  lv_obj_set_style_bg_opa(g_bottom_band, LV_OPA_30, 0);
-  lv_obj_set_style_border_width(g_bottom_band, 0, 0);
-  lv_obj_set_style_pad_all(g_bottom_band, PAD_SMALL, 0);
-  lv_obj_set_flex_flow(g_bottom_band, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(g_bottom_band, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_clear_flag(g_bottom_band, LV_OBJ_FLAG_SCROLLABLE);
+  ensure_bottom_band();
 
-  // Uptime label
-  g_label_uptime = lv_label_create(g_bottom_band);
-  lv_label_set_text(g_label_uptime, "UP: 00:00:00");
-  lv_label_set_long_mode(g_label_uptime, LV_LABEL_LONG_CLIP);
-  lv_obj_add_style(g_label_uptime, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT), 0);
-  lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_LEFT, 0);
-  lv_obj_set_style_pad_left(g_label_uptime, PAD_SMALL, 0);
-  lv_obj_set_width(g_label_uptime, LV_SIZE_CONTENT);
-  lv_obj_set_flex_grow(g_label_uptime, 1);
-
-  // Menu button
-  g_bottom_button = lv_btn_create(g_bottom_band);
-  lv_obj_set_size(g_bottom_button, BUTTON_WIDTH, BUTTON_HEIGHT);
-  lv_obj_add_style(g_bottom_button, ui_get_style_btn_primary(), 0);
-  lv_obj_add_event_cb(g_bottom_button, dispatch_bottom_button, LV_EVENT_CLICKED, NULL);
-
-  g_bottom_button_label = lv_label_create(g_bottom_button);
-  lv_obj_center(g_bottom_button_label);
-  lv_obj_add_style(g_bottom_button_label, ui_get_style_label_normal(), 0);
-  lv_obj_set_style_text_color(g_bottom_button_label, lv_color_hex(COLOR_TEXT), 0);
-  update_bottom_button("Menu", on_menu_btn_click);
-  
-  g_main_screen = scr;
-  g_active_screen = scr;
-
-  lv_timer_create(update_uptime_cb, 1000, NULL);
-  lv_timer_create(wallpaper_timer_cb, 30000, NULL);
+  g_timer_uptime = lv_timer_create(update_uptime_cb, 1000, NULL);
+  g_timer_wallpaper = lv_timer_create(wallpaper_timer_cb, 30000, NULL);
 
   Serial.println("PIXEL: Main screen created");
   return scr;
@@ -230,7 +181,7 @@ static void on_back_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: Back button clicked");
-  ui_show_main_screen();
+  ui_post_event(UI_EVENT_BACK);
 }
 
 static void update_uptime_cb(lv_timer_t* timer)
@@ -266,29 +217,6 @@ static void wallpaper_timer_cb(lv_timer_t* timer)
 }
 
 // Screen management
-void ui_load_screen(lv_obj_t* new_screen)
-{
-    lv_obj_t* old_screen = g_current_screen;
-    g_current_screen = new_screen;
-
-    lv_scr_load(new_screen);
-
-    if (old_screen != NULL && old_screen != new_screen) {
-        lv_obj_del(old_screen);   // <-- ceci supprime VRAIMENT ton ancien écran
-    }
-
-    Serial.printf(
-        "[UI] After screen load/free: free=%u largest=%u\n",
-        heap_caps_get_free_size(MALLOC_CAP_8BIT),
-        heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)
-    );
-}
-
-lv_obj_t* ui_get_active_screen(void)
-{
-  return g_active_screen;
-}
-
 static void update_bottom_button(const char* label, lv_event_cb_t handler)
 {
   if (!g_bottom_button_label) return;
@@ -306,21 +234,71 @@ static void dispatch_bottom_button(lv_event_t* e)
 
 static void apply_bottom_button_state(void)
 {
-  switch (g_screen_state) {
-    case UI_SCREEN_STATE_MAIN:
+  switch (g_bottom_state) {
+    case UI_SCREEN_MAIN:
       update_bottom_button("Menu", on_menu_btn_click);
       break;
-    case UI_SCREEN_STATE_WIFI:
-    case UI_SCREEN_STATE_BLE:
-    case UI_SCREEN_STATE_SETTINGS:
-    case UI_SCREEN_STATE_MONITOR:
+    case UI_SCREEN_WIFI:
+    case UI_SCREEN_BLE:
+    case UI_SCREEN_SETTINGS:
+    case UI_SCREEN_MONITOR:
       update_bottom_button("Back", on_back_btn_click);
+      break;
+    default:
+      update_bottom_button("", NULL);
       break;
   }
 }
 
+static void ensure_bottom_band(void)
+{
+  if (g_bottom_bar_initialized) {
+    apply_bottom_button_state();
+    return;
+  }
+
+  int band_bottom_y = LV_VER_RES - BAND_HEIGHT;
+
+  g_bottom_band = lv_obj_create(lv_layer_top());
+  lv_obj_set_size(g_bottom_band, LV_HOR_RES, BAND_HEIGHT);
+  lv_obj_set_pos(g_bottom_band, 0, band_bottom_y);
+  lv_obj_set_style_bg_color(g_bottom_band, lv_color_hex(COLOR_SURFACE), 0);
+  lv_obj_set_style_bg_opa(g_bottom_band, LV_OPA_30, 0);
+  lv_obj_set_style_border_width(g_bottom_band, 0, 0);
+  lv_obj_set_style_pad_all(g_bottom_band, PAD_SMALL, 0);
+  lv_obj_set_flex_flow(g_bottom_band, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(g_bottom_band, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_clear_flag(g_bottom_band, LV_OBJ_FLAG_SCROLLABLE);
+
+  // Uptime label
+  g_label_uptime = lv_label_create(g_bottom_band);
+  lv_label_set_text(g_label_uptime, "UP: 00:00:00");
+  lv_label_set_long_mode(g_label_uptime, LV_LABEL_LONG_CLIP);
+  lv_obj_add_style(g_label_uptime, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(g_label_uptime, lv_color_hex(COLOR_TEXT), 0);
+  lv_obj_set_style_text_align(g_label_uptime, LV_TEXT_ALIGN_LEFT, 0);
+  lv_obj_set_style_pad_left(g_label_uptime, PAD_SMALL, 0);
+  lv_obj_set_width(g_label_uptime, LV_SIZE_CONTENT);
+  lv_obj_set_flex_grow(g_label_uptime, 1);
+
+  // Menu/back button
+  g_bottom_button = lv_btn_create(g_bottom_band);
+  lv_obj_set_size(g_bottom_button, BUTTON_WIDTH, BUTTON_HEIGHT);
+  lv_obj_add_style(g_bottom_button, ui_get_style_btn_primary(), 0);
+  lv_obj_add_event_cb(g_bottom_button, dispatch_bottom_button, LV_EVENT_CLICKED, NULL);
+
+  g_bottom_button_label = lv_label_create(g_bottom_button);
+  lv_obj_center(g_bottom_button_label);
+  lv_obj_add_style(g_bottom_button_label, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(g_bottom_button_label, lv_color_hex(COLOR_TEXT), 0);
+
+  g_bottom_bar_initialized = true;
+  apply_bottom_button_state();
+}
+
 void ui_bottom_button_set(const char* label, lv_event_cb_t handler)
 {
+  ensure_bottom_band();
   update_bottom_button(label ? label : "", handler);
 }
 
@@ -329,32 +307,22 @@ void ui_bottom_button_restore(void)
   apply_bottom_button_state();
 }
 
-void ui_set_screen_state_to_main(void)
+void ui_apply_bottom_button_for_screen(ui_screen_id_t screen_id)
 {
-  g_screen_state = UI_SCREEN_STATE_MAIN;
+  g_bottom_state = screen_id;
   apply_bottom_button_state();
 }
 
-void ui_set_screen_state_to_wifi(void)
+void ui_main_screen_on_unload(void)
 {
-  g_screen_state = UI_SCREEN_STATE_WIFI;
-  apply_bottom_button_state();
-}
-
-void ui_set_screen_state_to_ble(void)
-{
-  g_screen_state = UI_SCREEN_STATE_BLE;
-  apply_bottom_button_state();
-}
-
-void ui_set_screen_state_to_settings(void)
-{
-  g_screen_state = UI_SCREEN_STATE_SETTINGS;
-  apply_bottom_button_state();
-}
-
-void ui_set_screen_state_to_monitor(void)
-{
-  g_screen_state = UI_SCREEN_STATE_MONITOR;
-  apply_bottom_button_state();
+  if (g_timer_uptime) {
+    lv_timer_del(g_timer_uptime);
+    g_timer_uptime = NULL;
+  }
+  if (g_timer_wallpaper) {
+    lv_timer_del(g_timer_wallpaper);
+    g_timer_wallpaper = NULL;
+  }
+  g_bg_img = NULL;
+  g_label_uptime = NULL;
 }

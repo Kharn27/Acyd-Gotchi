@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <string.h>
 
-static lv_obj_t* g_ble_screen = NULL;
 static lv_obj_t* g_content_container = NULL;
 static lv_obj_t* g_ble_scan_button = NULL;
 static lv_obj_t* g_duration_container = NULL;
@@ -73,9 +72,14 @@ static ble_device_entry_t* allocate_entry(const uint8_t* addr);
 static void scan_timer_cb(lv_timer_t* timer);
 static void fetch_local_mac(void);
 static void update_title_mac_label(void);
+static bool is_ble_screen_active(void);
 
-lv_obj_t* ui_create_ble_screen(void)
+lv_obj_t* ui_build_ble_screen(void)
 {
+  memset(g_device_entries, 0, sizeof(g_device_entries));
+  g_scan_active = false;
+  g_has_scanned = false;
+
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
@@ -212,7 +216,6 @@ lv_obj_t* ui_create_ble_screen(void)
   // Empty state label
   create_empty_label();
 
-  g_ble_screen = scr;
   set_top_band_state(TOP_STATE_IDLE);
   refresh_empty_state();
   Serial.println("PIXEL: BLE screen created");
@@ -231,6 +234,7 @@ uint32_t ui_ble_get_last_scan_duration_ms(void)
 
 void ui_ble_set_state_idle(void)
 {
+  if (!is_ble_screen_active()) return;
   g_scan_active = false;
   stop_scan_timer();
   g_scan_remaining_ms = 0;
@@ -242,6 +246,7 @@ void ui_ble_set_state_idle(void)
 
 void ui_ble_set_state_choosing_duration(void)
 {
+  if (!is_ble_screen_active()) return;
   set_top_band_state(TOP_STATE_DURATION);
   if (g_status_label) {
     lv_label_set_text(g_status_label, "Choose scan duration.");
@@ -250,6 +255,7 @@ void ui_ble_set_state_choosing_duration(void)
 
 void ui_ble_set_state_scanning(uint32_t duration_ms)
 {
+  if (!is_ble_screen_active()) return;
   // Avoid redundant list clears if we already transitioned to scanning.
   if (!g_scan_active) {
     ui_ble_prepare_for_scan(duration_ms);
@@ -263,6 +269,7 @@ void ui_ble_set_state_scanning(uint32_t duration_ms)
 
 void ui_ble_cancel_scan(void)
 {
+  if (!is_ble_screen_active()) return;
   g_scan_active = false;
   stop_scan_timer();
   g_scan_remaining_ms = 0;
@@ -279,6 +286,7 @@ void ui_ble_cancel_scan(void)
 
 void ui_ble_show_scan_request(uint32_t duration_ms)
 {
+  if (!is_ble_screen_active()) return;
   // Kick off UI-side scan state immediately while waiting for NETSEC start ack.
   ui_ble_prepare_for_scan(duration_ms);
   set_top_band_state(TOP_STATE_SCANNING);
@@ -286,6 +294,7 @@ void ui_ble_show_scan_request(uint32_t duration_ms)
 
 void ui_ble_prepare_for_scan(uint32_t duration_ms)
 {
+  if (!is_ble_screen_active()) return;
   clear_device_list();
 
   g_scan_active = true;
@@ -302,12 +311,14 @@ void ui_ble_prepare_for_scan(uint32_t duration_ms)
 
 void ui_ble_handle_device_found(const netsec_ble_device_t* device)
 {
+  if (!is_ble_screen_active()) return;
   if (!device) return;
   upsert_device_row(device);
 }
 
 void ui_ble_handle_scan_started(const netsec_scan_summary_t* meta)
 {
+  if (!is_ble_screen_active()) return;
   const uint32_t duration_ms = meta ? meta->duration_ms : g_last_duration_ms;
   ui_ble_set_state_scanning(duration_ms);
   g_scan_active = true;
@@ -317,6 +328,7 @@ void ui_ble_handle_scan_started(const netsec_scan_summary_t* meta)
 
 void ui_ble_handle_scan_completed(const netsec_scan_summary_t* meta)
 {
+  if (!is_ble_screen_active()) return;
   g_scan_active = false;
   g_scan_active = false;
   stop_scan_timer();
@@ -337,6 +349,7 @@ void ui_ble_handle_scan_completed(const netsec_scan_summary_t* meta)
 
 void ui_ble_handle_scan_error_memory(void)
 {
+  if (!is_ble_screen_active()) return;
   g_scan_active = false;
   stop_scan_timer();
   g_scan_remaining_ms = 0;
@@ -571,6 +584,8 @@ static void scan_timer_cb(lv_timer_t* timer)
 {
   (void)timer;
 
+  if (!is_ble_screen_active()) return;
+
   if (!g_scan_active) return;
 
   if (g_scan_remaining_ms <= 1000) {
@@ -606,5 +621,36 @@ static void update_title_mac_label(void)
   if (g_list_title) {
     lv_label_set_text_fmt(g_list_title, "BLE Devices (%s)", g_local_mac_str);
   }
+}
+
+static bool is_ble_screen_active(void)
+{
+  return ui_get_current_screen() == UI_SCREEN_BLE;
+}
+
+void ui_ble_on_unload(void)
+{
+  if (g_scan_timer) {
+    lv_timer_del(g_scan_timer);
+    g_scan_timer = NULL;
+  }
+
+  g_content_container = NULL;
+  g_ble_scan_button = NULL;
+  g_duration_container = NULL;
+  g_idle_container = NULL;
+  g_scanning_container = NULL;
+  g_scanning_spinner = NULL;
+  g_list_title = NULL;
+  g_device_list = NULL;
+  g_empty_label = NULL;
+  g_status_label = NULL;
+  g_duration_buttons[0] = g_duration_buttons[1] = g_duration_buttons[2] = NULL;
+  memset(g_device_entries, 0, sizeof(g_device_entries));
+  g_scan_active = false;
+  g_has_scanned = false;
+  g_scan_remaining_ms = 0;
+  g_last_duration_ms = 0;
+  g_top_state = TOP_STATE_IDLE;
 }
 

@@ -16,11 +16,10 @@
 
 static QueueHandle_t g_ui_queue = NULL;
 static ui_event_router_t g_event_router = NULL;
-static lv_obj_t* g_main_screen = NULL;
-static lv_obj_t* g_wifi_screen = NULL;
-static lv_obj_t* g_ble_screen = NULL;
-static lv_obj_t* g_settings_screen = NULL;
-static lv_obj_t* g_monitor_screen = NULL;
+static bool g_theme_initialized = false;
+static ui_screen_id_t g_current_screen = UI_SCREEN_MAIN;
+
+static lv_obj_t* ui_build_screen(ui_screen_id_t target);
 
 // Implementation of ui_api.h functions
 void ui_init(QueueHandle_t ui_queue)
@@ -55,72 +54,64 @@ bool ui_post_event(ui_event_t event)
   return true;
 }
 
-void ui_show_main_screen(void)
+static lv_obj_t* ui_build_screen(ui_screen_id_t target)
 {
-  Serial.println("PIXEL: Showing main screen");
-  
-  if (!g_main_screen) {
-    // Initialize theme first
+  switch (target) {
+    case UI_SCREEN_MAIN:
+      return ui_create_main_screen();
+    case UI_SCREEN_WIFI:
+      return ui_create_wifi_screen();
+    case UI_SCREEN_BLE:
+      return ui_create_ble_screen();
+    case UI_SCREEN_SETTINGS:
+      return ui_create_settings_screen();
+    case UI_SCREEN_MONITOR:
+      return ui_create_monitor_screen();
+    default:
+      return NULL;
+  }
+}
+
+void ui_navigate_to(ui_screen_id_t target)
+{
+  if (!g_theme_initialized) {
     ui_theme_init();
-
-    // Create main screen
-    g_main_screen = ui_create_main_screen();
-
-    // Load it
-    ui_load_screen(g_main_screen);
-  } else {
-    ui_load_screen(g_main_screen);
+    g_theme_initialized = true;
   }
 
-  ui_set_screen_state_to_main();
+  ui_screen_id_t previous = g_current_screen;
+  lv_obj_t* old_screen = lv_scr_act();
+
+  lv_obj_t* new_screen = ui_build_screen(target);
+  if (!new_screen) {
+    Serial.println("PIXEL: Failed to build target screen");
+    return;
+  }
+
+  Serial.printf("PIXEL: navigate %d -> %d\n", previous, target);
+  lv_scr_load(new_screen);
+
+  if (old_screen && old_screen != new_screen) {
+    lv_obj_del(old_screen);
+  }
+
+  g_current_screen = target;
+  ui_set_bottom_bar_for_screen(target);
+
+#ifdef UI_DEBUG_MEM
+  lv_mem_monitor_t mon;
+  lv_mem_monitor(&mon);
+  Serial.printf("[UI] free=%lu used=%lu max_used=%lu frag=%d%%\n",
+                (unsigned long)mon.free_size,
+                (unsigned long)(mon.total_size - mon.free_size),
+                (unsigned long)mon.max_used,
+                mon.frag_pct);
+#endif
 }
 
-void ui_show_wifi_screen(void)
+ui_screen_id_t ui_get_current_screen(void)
 {
-  Serial.println("PIXEL: Showing WiFi screen");
-  
-  if (!g_wifi_screen) {
-    g_wifi_screen = ui_create_wifi_screen();
-  }
-
-  ui_set_screen_state_to_wifi();
-  ui_load_screen(g_wifi_screen);
-}
-
-void ui_show_ble_screen(void)
-{
-  Serial.println("PIXEL: Showing BLE screen");
-  
-  if (!g_ble_screen) {
-    g_ble_screen = ui_create_ble_screen();
-  }
-
-  ui_set_screen_state_to_ble();
-  ui_load_screen(g_ble_screen);
-}
-
-void ui_show_settings_screen(void)
-{
-  Serial.println("PIXEL: Showing Settings screen");
-
-  if (!g_settings_screen) {
-    g_settings_screen = ui_create_settings_screen();
-  }
-
-  ui_set_screen_state_to_settings();
-  ui_load_screen(g_settings_screen);
-}
-
-void ui_show_monitor_screen(void)
-{
-  Serial.println("PIXEL: Showing Monitor screen");
-
-  if (!g_monitor_screen) {
-    g_monitor_screen = ui_create_monitor_screen();
-  }
-
-  ui_set_screen_state_to_monitor();
-  ui_load_screen(g_monitor_screen);
+  return g_current_screen;
 }
 
 void ui_update_pet(uint32_t delta_ms)

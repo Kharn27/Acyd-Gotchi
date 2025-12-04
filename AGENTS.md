@@ -291,3 +291,8 @@ Dans tes réponses :
   - garder THEBOSS et les autres agents alignés sur une roadmap réaliste,
   - éviter les bricolages dans les libs `.pio/libdeps`.
 - Tu travailles **par phases**, toujours de manière incrémentale, en respectant l’état du projet et les contraintes matérielles.
+
+### Rappel UI (navigation LVGL)
+
+- Garder **un seul écran LVGL actif** à la fois : navigation via `ui_navigate_to(ui_screen_id_t)` qui reconstruit l’écran cible et détruit l’écran précédent.
+- Ne pas mettre en cache les `lv_obj_t*` de screens complets ; seules les surfaces communes minimales (ex. barre basse) peuvent rester persistantes.

@@ -9,6 +9,7 @@
 
 #include "lvgl.h"
 #include "netsec_api.h"
+#include "ui_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,19 +43,9 @@ lv_obj_t* ui_create_settings_screen(void);
 
 // Create monitoring screen (system stats)
 lv_obj_t* ui_create_monitor_screen(void);
-void ui_set_screen_state_to_monitor(void);
-
-// Load a screen (switch display to given object)
-void ui_load_screen(lv_obj_t* screen);
-
-// Get current active screen
-lv_obj_t* ui_get_active_screen(void);
 
 // Update bottom button state depending on active screen
-void ui_set_screen_state_to_main(void);
-void ui_set_screen_state_to_wifi(void);
-void ui_set_screen_state_to_ble(void);
-void ui_set_screen_state_to_settings(void);
+void ui_set_bottom_bar_for_screen(ui_screen_id_t screen_id);
 void ui_bottom_button_set(const char* label, lv_event_cb_t handler);
 void ui_bottom_button_restore(void);
 

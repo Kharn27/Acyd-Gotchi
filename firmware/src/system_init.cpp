@@ -114,16 +114,12 @@ __attribute__((weak)) void ui_init(QueueHandle_t ui_queue) {
     Serial.println("[UI] Init stub (PIXEL will implement)");
 }
 
-__attribute__((weak)) void ui_show_main_screen(void) {
-    Serial.println("[UI] Show main screen stub");
+__attribute__((weak)) void ui_navigate_to(ui_screen_id_t target) {
+    Serial.printf("[UI] Navigate stub to %d (PIXEL will implement)\n", target);
 }
 
-__attribute__((weak)) void ui_show_wifi_screen(void) {
-    Serial.println("[UI] Show WiFi screen stub");
-}
-
-__attribute__((weak)) void ui_show_ble_screen(void) {
-    Serial.println("[UI] Show BLE screen stub");
+__attribute__((weak)) ui_screen_id_t ui_get_current_screen(void) {
+    return UI_SCREEN_MAIN;
 }
 
 __attribute__((weak)) void ui_update_pet(uint32_t delta_ms) {

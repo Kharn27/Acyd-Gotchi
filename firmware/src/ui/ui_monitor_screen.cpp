@@ -13,8 +13,6 @@
 #include <Arduino.h>
 #include <stdio.h>
 #include <string.h>
-
-static lv_obj_t* g_monitor_screen = NULL;
 static lv_obj_t* g_label_heap = NULL;
 static lv_obj_t* g_label_heap_min = NULL;
 static lv_obj_t* g_label_flash = NULL;
@@ -23,9 +21,15 @@ static lv_obj_t* g_label_psram = NULL;
 static lv_timer_t* g_refresh_timer = NULL;
 
 static void monitor_refresh_cb(lv_timer_t* timer);
+static void on_monitor_screen_delete(lv_event_t* e);
 
 lv_obj_t* ui_create_monitor_screen(void)
 {
+  if (g_refresh_timer) {
+    lv_timer_del(g_refresh_timer);
+    g_refresh_timer = NULL;
+  }
+
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
@@ -89,7 +93,7 @@ lv_obj_t* ui_create_monitor_screen(void)
   g_refresh_timer = lv_timer_create(monitor_refresh_cb, 1000, NULL);
   monitor_refresh_cb(NULL);
 
-  g_monitor_screen = scr;
+  lv_obj_add_event_cb(scr, on_monitor_screen_delete, LV_EVENT_DELETE, NULL);
   return scr;
 }
 
@@ -141,6 +145,22 @@ static void monitor_refresh_cb(lv_timer_t* timer)
         static_cast<unsigned>(stats.psram_total_bytes / 1024));
   } else {
     lv_label_set_text(g_label_psram, "PSRAM: not available");
+  }
+}
+
+static void on_monitor_screen_delete(lv_event_t* e)
+{
+  (void)e;
+
+  g_label_heap = NULL;
+  g_label_heap_min = NULL;
+  g_label_flash = NULL;
+  g_label_spiffs = NULL;
+  g_label_psram = NULL;
+
+  if (g_refresh_timer) {
+    lv_timer_del(g_refresh_timer);
+    g_refresh_timer = NULL;
   }
 }
 

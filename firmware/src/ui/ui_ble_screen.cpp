@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <string.h>
 
-static lv_obj_t* g_ble_screen = NULL;
 static lv_obj_t* g_content_container = NULL;
 static lv_obj_t* g_ble_scan_button = NULL;
 static lv_obj_t* g_duration_container = NULL;
@@ -73,9 +72,23 @@ static ble_device_entry_t* allocate_entry(const uint8_t* addr);
 static void scan_timer_cb(lv_timer_t* timer);
 static void fetch_local_mac(void);
 static void update_title_mac_label(void);
+static void on_ble_screen_delete(lv_event_t* e);
 
 lv_obj_t* ui_create_ble_screen(void)
 {
+  if (g_scan_timer) {
+    lv_timer_del(g_scan_timer);
+    g_scan_timer = NULL;
+  }
+
+  memset(g_device_entries, 0, sizeof(g_device_entries));
+  g_scan_remaining_ms = 0;
+  g_scan_active = false;
+  g_last_duration_ms = 0;
+  g_has_scanned = false;
+  g_top_state = TOP_STATE_IDLE;
+  memset(g_duration_buttons, 0, sizeof(g_duration_buttons));
+
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
@@ -212,9 +225,9 @@ lv_obj_t* ui_create_ble_screen(void)
   // Empty state label
   create_empty_label();
 
-  g_ble_screen = scr;
   set_top_band_state(TOP_STATE_IDLE);
   refresh_empty_state();
+  lv_obj_add_event_cb(scr, on_ble_screen_delete, LV_EVENT_DELETE, NULL);
   Serial.println("PIXEL: BLE screen created");
   return scr;
 }
@@ -605,6 +618,34 @@ static void update_title_mac_label(void)
 {
   if (g_list_title) {
     lv_label_set_text_fmt(g_list_title, "BLE Devices (%s)", g_local_mac_str);
+  }
+}
+
+static void on_ble_screen_delete(lv_event_t* e)
+{
+  (void)e;
+
+  g_content_container = NULL;
+  g_ble_scan_button = NULL;
+  g_duration_container = NULL;
+  g_idle_container = NULL;
+  g_scanning_container = NULL;
+  g_scanning_spinner = NULL;
+  g_list_title = NULL;
+  g_device_list = NULL;
+  g_empty_label = NULL;
+  g_status_label = NULL;
+  g_top_state = TOP_STATE_IDLE;
+  g_scan_active = false;
+  g_scan_remaining_ms = 0;
+  g_last_duration_ms = 0;
+  g_has_scanned = false;
+  memset(g_duration_buttons, 0, sizeof(g_duration_buttons));
+  memset(g_device_entries, 0, sizeof(g_device_entries));
+
+  if (g_scan_timer) {
+    lv_timer_del(g_scan_timer);
+    g_scan_timer = NULL;
   }
 }
 

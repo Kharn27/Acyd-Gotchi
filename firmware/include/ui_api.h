@@ -24,6 +24,14 @@ typedef enum {
     UI_EVENT_BUTTON_MONITOR, // Top bar monitor/stats button
 } ui_event_t;
 
+typedef enum {
+    UI_SCREEN_MAIN = 0,
+    UI_SCREEN_WIFI,
+    UI_SCREEN_BLE,
+    UI_SCREEN_SETTINGS,
+    UI_SCREEN_MONITOR,
+} ui_screen_id_t;
+
 typedef void (*ui_event_router_t)(ui_event_t event);
 
 /**
@@ -52,33 +60,15 @@ ui_event_router_t ui_get_event_router(void);
 bool ui_post_event(ui_event_t event);
 
 /**
- * Display the main screen (pet + button bands).
- * Called after ui_init().
+ * Navigate to a logical screen. The previous LVGL screen is destroyed
+ * and the requested screen is rebuilt from scratch.
  */
-void ui_show_main_screen(void);
+void ui_navigate_to(ui_screen_id_t target);
 
 /**
- * Display the WiFi scan results screen.
- * Called when user taps WiFi button.
+ * Return the currently active logical screen.
  */
-void ui_show_wifi_screen(void);
-
-/**
- * Display the Bluetooth scan results screen.
- * Called when user taps Bluetooth button.
- */
-void ui_show_ble_screen(void);
-
-/**
- * Display the Settings screen.
- * Called when user taps Menu.
- */
-void ui_show_settings_screen(void);
-
-/**
- * Display the system monitoring screen.
- */
-void ui_show_monitor_screen(void);
+ui_screen_id_t ui_get_current_screen(void);
 
 /**
  * Update the pet animation (called periodically from ui_task).

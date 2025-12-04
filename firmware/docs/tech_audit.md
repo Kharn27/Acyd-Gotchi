@@ -15,6 +15,13 @@
   - Le module initialise le WiFi en STA, offre des API start/stop pour WiFi/BLE et une boucle `netsec_task` consommant une queue de commandes basiques (opcodes 1–4). 【F:src/netsec_core.cpp†L13-L62】【F:src/netsec_core.cpp†L71-L105】
   - Des callbacks WiFi/BLE existent : scan async WiFi avec publication de résultats dans `netsec_result_queue`, début d’implémentation BLE basé sur `BLEDevice`. 【F:src/netsec/netsec_wifi.cpp†L14-L72】【F:src/netsec/netsec_ble.cpp†L11-L48】
 
+## Architecture UI actuelle – gestion des écrans
+
+- Modules d’écran : `ui_main_screen.cpp` (écran principal + bottom bar), `ui_wifi_screen.cpp` (liste AP), `ui_ble_screen.cpp` (scan BLE), `ui_settings_screen.cpp` (placeholder), `ui_monitor_screen.cpp` (stats). Chaque module expose une fonction de construction (`ui_create_*`) sans conserver de pointeur global de `lv_obj_t*` pour un écran complet. 【F:src/ui/ui_main_screen.cpp†L39-L116】【F:src/ui/ui_wifi_screen.cpp†L16-L77】【F:src/ui/ui_ble_screen.cpp†L16-L79】【F:src/ui/ui_settings_screen.cpp†L11-L32】【F:src/ui/ui_monitor_screen.cpp†L11-L48】
+- Navigation : `ui_navigate_to` reconstruit l’écran demandé à chaque changement, charge le nouvel écran via `lv_scr_load` puis détruit l’écran précédent. L’API repose sur l’enum logique `ui_screen_id_t` (MAIN, WIFI, BLE, SETTINGS, MONITOR) pour adresser les écrans sans garder d’objets LVGL cachés. 【F:src/ui_main.cpp†L18-L87】【F:src/ui_main.cpp†L89-L131】【F:include/ui_api.h†L10-L41】
+- Barre basse : un unique conteneur persistant (bouton Menu/Back + uptime) est recréé lors de la construction du main screen si besoin, et son état est synchronisé avec l’écran logique via `ui_set_bottom_bar_for_screen`. 【F:src/ui/ui_main_screen.cpp†L118-L212】【F:src/ui/ui_main_screen.cpp†L271-L320】【F:src/ui/ui_main_screen.cpp†L322-L351】
+- Nettoyage : chaque écran enregistre un callback `LV_EVENT_DELETE` pour annuler ses timers, remettre à zéro les pointeurs internes et éviter de conserver des listes/rows LVGL après destruction. 【F:src/ui/ui_main_screen.cpp†L200-L215】【F:src/ui/ui_wifi_screen.cpp†L19-L66】【F:src/ui/ui_wifi_screen.cpp†L68-L87】【F:src/ui/ui_ble_screen.cpp†L92-L143】【F:src/ui/ui_ble_screen.cpp†L227-L265】【F:src/ui/ui_monitor_screen.cpp†L13-L44】【F:src/ui/ui_monitor_screen.cpp†L75-L95】
+
 ## Limites / dettes techniques restantes
 
 - **UI/UX** : mise en page basique (fonds unis, polices par défaut LVGL), pas de véritable retour d’état ni d’animations de pet ; les écrans WiFi/BLE/Settings n’affichent que des listes factices ou un placeholder sans interaction avec les scans. 【F:src/ui/ui_main_screen.cpp†L78-L138】【F:src/ui/ui_wifi_screen.cpp†L29-L41】【F:src/ui/ui_ble_screen.cpp†L29-L41】【F:src/ui/ui_settings_screen.cpp†L13-L33】

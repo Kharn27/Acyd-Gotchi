@@ -44,6 +44,7 @@ typedef enum {
     NETSEC_RES_BLE_DEVICE_FOUND, // BLE device found
     NETSEC_RES_BLE_SCAN_COMPLETED, // BLE scan complete (duration reached)
     NETSEC_RES_BLE_SCAN_CANCELED,  // BLE scan canceled by user
+    NETSEC_RES_BLE_SCAN_ERROR_MEMORY, // BLE scan aborted due to insufficient heap
 } netsec_result_type_t;
 
 /* NETSEC result structure sent via queue */

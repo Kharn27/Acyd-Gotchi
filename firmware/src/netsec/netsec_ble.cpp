@@ -27,6 +27,8 @@ static uint16_t s_ble_devices_reported = 0;
 static bool s_bt_classic_mem_released = false;
 static constexpr size_t NETSEC_BLE_MIN_HEAP_BYTES = 50 * 1024;
 
+static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t device_count, uint32_t duration_ms);
+
 static bool netsec_ble_check_heap(void) {
 #if defined(ARDUINO_ARCH_ESP32)
   const size_t free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
@@ -36,6 +38,7 @@ static bool netsec_ble_check_heap(void) {
                 static_cast<unsigned>(largest_8bit));
   if (free_8bit < NETSEC_BLE_MIN_HEAP_BYTES || largest_8bit < (NETSEC_BLE_MIN_HEAP_BYTES / 2)) {
     Serial.println("[NETSEC:BLE] Not enough heap for BLE init, aborting scan");
+    netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_ERROR_MEMORY, 0, 0);
     return false;
   }
 #endif
@@ -52,6 +55,7 @@ static const char* netsec_ble_result_type_str(netsec_result_type_t type) {
     case NETSEC_RES_BLE_DEVICE_FOUND: return "BLE_DEVICE_FOUND";
     case NETSEC_RES_BLE_SCAN_COMPLETED: return "BLE_SCAN_COMPLETED";
     case NETSEC_RES_BLE_SCAN_CANCELED: return "BLE_SCAN_CANCELED";
+    case NETSEC_RES_BLE_SCAN_ERROR_MEMORY: return "BLE_SCAN_ERROR_MEMORY";
     case NETSEC_RES_WIFI_AP: return "WIFI_AP";
     case NETSEC_RES_WIFI_SCAN_DONE: return "WIFI_SCAN_DONE";
     default: return "UNKNOWN";

@@ -86,6 +86,10 @@ void ui_task(void * pvParameters)
           ui_ble_cancel_scan();
           g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
+        case NETSEC_RES_BLE_SCAN_ERROR_MEMORY:
+          ui_ble_handle_scan_error_memory();
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
+          break;
         default:
           break;
       }

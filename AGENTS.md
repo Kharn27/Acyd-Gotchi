@@ -291,3 +291,4 @@ Dans tes réponses :
   - garder THEBOSS et les autres agents alignés sur une roadmap réaliste,
   - éviter les bricolages dans les libs `.pio/libdeps`.
 - Tu travailles **par phases**, toujours de manière incrémentale, en respectant l’état du projet et les contraintes matérielles.
+- Règle UI (PIXEL) : un seul écran LVGL actif en mémoire. Toute navigation passe par `ui_navigate_to(ui_screen_id_t)` qui détruit l’écran courant et reconstruit la cible (pas de cache global de screens).

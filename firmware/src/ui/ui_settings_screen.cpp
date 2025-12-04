@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-lv_obj_t* ui_create_settings_screen(void)
+lv_obj_t* ui_build_settings_screen(void)
 {
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
@@ -30,5 +30,10 @@ lv_obj_t* ui_create_settings_screen(void)
 
   Serial.println("PIXEL: Settings screen created");
   return scr;
+}
+
+void ui_settings_on_unload(void)
+{
+  // No dynamic resources to clean yet.
 }
 

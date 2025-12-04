@@ -15,6 +15,21 @@
   - Le module initialise le WiFi en STA, offre des API start/stop pour WiFi/BLE et une boucle `netsec_task` consommant une queue de commandes basiques (opcodes 1–4). 【F:src/netsec_core.cpp†L13-L62】【F:src/netsec_core.cpp†L71-L105】
   - Des callbacks WiFi/BLE existent : scan async WiFi avec publication de résultats dans `netsec_result_queue`, début d’implémentation BLE basé sur `BLEDevice`. 【F:src/netsec/netsec_wifi.cpp†L14-L72】【F:src/netsec/netsec_ble.cpp†L11-L48】
 
+## Architecture UI – gestion des écrans
+
+### État hérité (avant refacto navigation)
+
+- Les modules d’écrans étaient structurés par fichiers dédiés (`ui_main_screen.cpp`, `ui_wifi_screen.cpp`, `ui_ble_screen.cpp`, `ui_settings_screen.cpp`, `ui_monitor_screen.cpp`) avec des fonctions `ui_show_*` et des pointeurs statiques par écran (`g_main_screen`, `g_wifi_screen`, `g_ble_screen`, etc.).
+- La navigation conservait ces pointeurs pour recharger un écran existant via `lv_scr_load`, ce qui maintenait plusieurs arbres LVGL en mémoire simultanément (main + WiFi + BLE + Settings + Monitor) malgré la RAM limitée (~320 Ko).
+
+### Nouvelle approche (un écran actif à la fois)
+
+- Une énumération logique `ui_screen_id_t` pilote la navigation : `UI_SCREEN_MAIN`, `UI_SCREEN_WIFI`, `UI_SCREEN_BLE`, `UI_SCREEN_SETTINGS`, `UI_SCREEN_MONITOR`. 【F:include/ui_api.h†L19-L34】
+- `ui_navigate_to()` centralise les transitions : nettoyage des ressources de l’écran courant, suppression de l’ancien `lv_scr_t`, construction du nouvel écran via `ui_build_*`, puis chargement LVGL. Les logs peuvent optionnellement tracer l’état mémoire LVGL (`UI_DEBUG_MEM`). 【F:src/ui_main.cpp†L20-L93】
+- Chaque module d’écran fournit désormais un constructeur sans cache (`ui_build_main_screen`, `ui_build_wifi_screen`, `ui_build_ble_screen`, `ui_build_settings_screen`, `ui_build_monitor_screen`) et un hook de nettoyage (`*_on_unload`) pour annuler timers et remettre les pointeurs à zéro. 【F:include/ui_screens.h†L18-L45】【F:src/ui/ui_ble_screen.cpp†L13-L34】【F:src/ui/ui_wifi_screen.cpp†L15-L31】【F:src/ui/ui_monitor_screen.cpp†L12-L27】
+- Les événements de navigation remontent via la queue UI : les callbacks de boutons postent `UI_EVENT_*`, `ui_task` appelle `ui_navigate_to`, et les écrans ignorent les mises à jour NETSEC lorsqu’ils ne sont pas actifs. 【F:src/ui/ui_main_screen.cpp†L205-L246】【F:src/ui_task.cpp†L9-L68】【F:src/ui/ui_wifi_screen.cpp†L50-L74】【F:src/ui/ui_ble_screen.cpp†L92-L139】
+- Une barre bas persistante (layer top) est créée une seule fois ; son label/handler est mis à jour en fonction du `ui_screen_id_t` actif. 【F:src/ui/ui_main_screen.cpp†L147-L204】
+
 ## Limites / dettes techniques restantes
 
 - **UI/UX** : mise en page basique (fonds unis, polices par défaut LVGL), pas de véritable retour d’état ni d’animations de pet ; les écrans WiFi/BLE/Settings n’affichent que des listes factices ou un placeholder sans interaction avec les scans. 【F:src/ui/ui_main_screen.cpp†L78-L138】【F:src/ui/ui_wifi_screen.cpp†L29-L41】【F:src/ui/ui_ble_screen.cpp†L29-L41】【F:src/ui/ui_settings_screen.cpp†L13-L33】

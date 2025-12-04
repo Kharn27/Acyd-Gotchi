@@ -36,6 +36,8 @@ enum active_screen_state {
 
 static active_screen_state g_screen_state = UI_SCREEN_STATE_MAIN;
 static lv_event_cb_t g_bottom_button_handler = NULL;
+// Référence vers le screen actuel
+static lv_obj_t* g_current_screen = NULL;
 
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
@@ -264,26 +266,22 @@ static void wallpaper_timer_cb(lv_timer_t* timer)
 }
 
 // Screen management
-void ui_load_screen(lv_obj_t* screen)
+void ui_load_screen(lv_obj_t* new_screen)
 {
-  if (screen == NULL) return;
+    lv_obj_t* old_screen = g_current_screen;
+    g_current_screen = new_screen;
 
-  lv_obj_t* old_screen = lv_scr_act();
-  lv_scr_load(screen);
+    lv_scr_load(new_screen);
 
-  if (old_screen != NULL && old_screen != screen) {
-    lv_obj_del(old_screen);
-  }
+    if (old_screen != NULL && old_screen != new_screen) {
+        lv_obj_del(old_screen);   // <-- ceci supprime VRAIMENT ton ancien écran
+    }
 
-  g_active_screen = screen;
-
-#if defined(ARDUINO_ARCH_ESP32)
-  Serial.printf("[UI] After screen load/free: free=%u largest=%u\n",
-                static_cast<unsigned>(heap_caps_get_free_size(MALLOC_CAP_8BIT)),
-                static_cast<unsigned>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)));
-#else
-  Serial.println("PIXEL: Screen loaded");
-#endif
+    Serial.printf(
+        "[UI] After screen load/free: free=%u largest=%u\n",
+        heap_caps_get_free_size(MALLOC_CAP_8BIT),
+        heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)
+    );
 }
 
 lv_obj_t* ui_get_active_screen(void)

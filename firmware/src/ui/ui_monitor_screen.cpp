@@ -13,19 +13,24 @@
 #include <Arduino.h>
 #include <stdio.h>
 #include <string.h>
-
-static lv_obj_t* g_monitor_screen = NULL;
 static lv_obj_t* g_label_heap = NULL;
 static lv_obj_t* g_label_heap_min = NULL;
+static lv_obj_t* g_label_internal_heap = NULL;
 static lv_obj_t* g_label_flash = NULL;
 static lv_obj_t* g_label_spiffs = NULL;
 static lv_obj_t* g_label_psram = NULL;
 static lv_timer_t* g_refresh_timer = NULL;
 
 static void monitor_refresh_cb(lv_timer_t* timer);
+static void on_monitor_screen_delete(lv_event_t* e);
 
 lv_obj_t* ui_create_monitor_screen(void)
 {
+  if (g_refresh_timer) {
+    lv_timer_del(g_refresh_timer);
+    g_refresh_timer = NULL;
+  }
+
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
@@ -70,6 +75,11 @@ lv_obj_t* ui_create_monitor_screen(void)
   lv_obj_set_style_text_color(g_label_heap_min, lv_color_hex(COLOR_TEXT), 0);
   lv_label_set_text(g_label_heap_min, "Heap min: --");
 
+  g_label_internal_heap = lv_label_create(content);
+  lv_obj_add_style(g_label_internal_heap, ui_get_style_label_normal(), 0);
+  lv_obj_set_style_text_color(g_label_internal_heap, lv_color_hex(COLOR_TEXT), 0);
+  lv_label_set_text(g_label_internal_heap, "Internal heap: --");
+
   g_label_flash = lv_label_create(content);
   lv_obj_add_style(g_label_flash, ui_get_style_label_normal(), 0);
   lv_obj_set_style_text_color(g_label_flash, lv_color_hex(COLOR_TEXT), 0);
@@ -89,7 +99,7 @@ lv_obj_t* ui_create_monitor_screen(void)
   g_refresh_timer = lv_timer_create(monitor_refresh_cb, 1000, NULL);
   monitor_refresh_cb(NULL);
 
-  g_monitor_screen = scr;
+  lv_obj_add_event_cb(scr, on_monitor_screen_delete, LV_EVENT_DELETE, NULL);
   return scr;
 }
 
@@ -100,28 +110,43 @@ static void monitor_refresh_cb(lv_timer_t* timer)
   if (!g_label_heap) return;
 
   archi_sys_stats_t stats;
-  if (!archi_get_sys_stats(&stats)) {
-    lv_label_set_text(g_label_heap, "Heap: N/A");
-    return;
+  archi_heap_snapshot_t heap_snap;
+  bool has_sys = archi_get_sys_stats(&stats);
+  bool has_heap = archi_get_heap_snapshot(&heap_snap);
+
+  if (has_heap) {
+    lv_label_set_text_fmt(
+        g_label_heap,
+        "8-bit heap free: %u B (largest %u B)",
+        static_cast<unsigned>(heap_snap.free_8bit),
+        static_cast<unsigned>(heap_snap.largest_8bit));
+
+    lv_label_set_text_fmt(
+        g_label_heap_min,
+        "8-bit heap min free: %u B",
+        static_cast<unsigned>(heap_snap.min_free_8bit));
+
+    lv_label_set_text_fmt(
+        g_label_internal_heap,
+        "Internal heap free: %u B (min %u B)",
+        static_cast<unsigned>(heap_snap.free_internal),
+        static_cast<unsigned>(heap_snap.min_internal));
+  } else {
+    lv_label_set_text(g_label_heap, "8-bit heap: N/A");
+    lv_label_set_text(g_label_heap_min, "8-bit heap min: N/A");
+    lv_label_set_text(g_label_internal_heap, "Internal heap: N/A");
   }
 
-  lv_label_set_text_fmt(
-      g_label_heap,
-      "Heap free: %u B (largest %u B)",
-      static_cast<unsigned>(stats.heap_free_bytes),
-      static_cast<unsigned>(stats.heap_largest_free_block));
+  if (has_sys) {
+    lv_label_set_text_fmt(
+        g_label_flash,
+        "Flash size: %u KB",
+        static_cast<unsigned>(stats.flash_chip_size_bytes / 1024));
+  } else {
+    lv_label_set_text(g_label_flash, "Flash: N/A");
+  }
 
-  lv_label_set_text_fmt(
-      g_label_heap_min,
-      "Heap min free: %u B",
-      static_cast<unsigned>(stats.heap_min_free_bytes));
-
-  lv_label_set_text_fmt(
-      g_label_flash,
-      "Flash size: %u KB",
-      static_cast<unsigned>(stats.flash_chip_size_bytes / 1024));
-
-  if (stats.spiffs_mounted && stats.spiffs_total_bytes > 0) {
+  if (has_sys && stats.spiffs_mounted && stats.spiffs_total_bytes > 0) {
     uint32_t free_bytes = stats.spiffs_total_bytes - stats.spiffs_used_bytes;
     lv_label_set_text_fmt(
         g_label_spiffs,
@@ -133,14 +158,41 @@ static void monitor_refresh_cb(lv_timer_t* timer)
     lv_label_set_text(g_label_spiffs, "SPIFFS: not mounted");
   }
 
-  if (stats.psram_total_bytes > 0) {
-    lv_label_set_text_fmt(
-        g_label_psram,
-        "PSRAM: %u/%u KB free",
-        static_cast<unsigned>(stats.psram_free_bytes / 1024),
-        static_cast<unsigned>(stats.psram_total_bytes / 1024));
+  if (has_sys && stats.psram_total_bytes > 0) {
+    if (has_heap && (heap_snap.free_psram > 0 || heap_snap.min_psram > 0)) {
+      lv_label_set_text_fmt(
+          g_label_psram,
+          "PSRAM: %u/%u KB free (min %u KB, largest %u B)",
+          static_cast<unsigned>(heap_snap.free_psram / 1024),
+          static_cast<unsigned>(stats.psram_total_bytes / 1024),
+          static_cast<unsigned>(heap_snap.min_psram / 1024),
+          static_cast<unsigned>(heap_snap.largest_psram));
+    } else {
+      lv_label_set_text_fmt(
+          g_label_psram,
+          "PSRAM: %u/%u KB free",
+          static_cast<unsigned>(stats.psram_free_bytes / 1024),
+          static_cast<unsigned>(stats.psram_total_bytes / 1024));
+    }
   } else {
     lv_label_set_text(g_label_psram, "PSRAM: not available");
+  }
+}
+
+static void on_monitor_screen_delete(lv_event_t* e)
+{
+  (void)e;
+
+  g_label_heap = NULL;
+  g_label_heap_min = NULL;
+  g_label_internal_heap = NULL;
+  g_label_flash = NULL;
+  g_label_spiffs = NULL;
+  g_label_psram = NULL;
+
+  if (g_refresh_timer) {
+    lv_timer_del(g_refresh_timer);
+    g_refresh_timer = NULL;
   }
 }
 

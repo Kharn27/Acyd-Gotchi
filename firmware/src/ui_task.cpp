@@ -11,6 +11,7 @@
 #include "ui_screens.h"
 #include "netsec_api.h"
 #include "lvgl_port.h"
+#include "archi/archi_stats.h"
 
 #include "lvgl.h"
 #include <freertos/FreeRTOS.h>
@@ -46,12 +47,14 @@ void ui_task(void * pvParameters)
   
   Serial.printf("UI Task started on core %d, priority %d\n",
                 xPortGetCoreID(), uxTaskPriorityGet(NULL));
+  archi_log_heap(" [UI] task start");
   
   // Initialize LVGL and drivers
   lvgl_port_init();
-  
+  archi_log_heap(" [UI] after lvgl_port_init");
+
   // Show main screen
-  ui_show_main_screen();
+  ui_navigate_to(UI_SCREEN_MAIN);
   
   // Task loop: call lv_timer_handler() every ~5 ms
   TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -107,24 +110,31 @@ void ui_task(void * pvParameters)
       switch (event) {
         case UI_EVENT_BUTTON_WIFI:
           Serial.println("UI Event: WiFi button pressed");
-          ui_show_wifi_screen();
+          ui_navigate_to(UI_SCREEN_WIFI);
           break;
 
         case UI_EVENT_BUTTON_BLE:
           Serial.println("UI Event: BLE button pressed");
-          ui_show_ble_screen();
+          ui_navigate_to(UI_SCREEN_BLE);
           ui_ble_set_state_idle();
           g_ble_ui_state = BLE_UI_STATE_IDLE;
           break;
 
         case UI_EVENT_BUTTON_MONITOR:
           Serial.println("UI Event: Monitor button pressed");
-          ui_show_monitor_screen();
+          ui_navigate_to(UI_SCREEN_MONITOR);
           break;
 
         case UI_EVENT_BUTTON_MENU:
           Serial.println("UI Event: Menu button pressed");
-          ui_show_settings_screen();
+          ui_navigate_to(UI_SCREEN_SETTINGS);
+          break;
+
+        case UI_EVENT_BACK:
+          Serial.println("UI Event: Back pressed");
+          ui_ble_set_state_idle();
+          g_ble_ui_state = BLE_UI_STATE_IDLE;
+          ui_navigate_to(UI_SCREEN_MAIN);
           break;
 
         case UI_EVENT_BLE_SCAN_REQUEST:

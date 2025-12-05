@@ -9,6 +9,7 @@
 #include "ui_api.h"
 #include "netsec_api.h"
 #include "netsec/netsec_core.h"
+#include "archi/archi_stats.h"
 
 // Global queue handles for inter-task communication
 QueueHandle_t ui_event_queue = NULL;
@@ -36,6 +37,7 @@ void archi_init_board(void) {
  */
 void system_init(void) {
     Serial.println("[SYSTEM] Initializing system...");
+    archi_log_heap(" [SYS] boot");
     
     // Initialize board hardware (GPIO, SPI, etc.)
     archi_init_board();
@@ -52,6 +54,7 @@ void system_init(void) {
     }
     
     Serial.println("[SYSTEM] Queues created");
+    archi_log_heap(" [SYS] queues");
     
     // Initialize UI module (passes queue handle)
     ui_init(ui_event_queue);
@@ -94,6 +97,7 @@ void system_init(void) {
     }
     
     Serial.println("[SYSTEM] System initialized successfully");
+    archi_log_heap(" [SYS] tasks");
 }
 
 // Weak task implementations (will be overridden by PIXEL and NETSEC modules)
@@ -114,16 +118,12 @@ __attribute__((weak)) void ui_init(QueueHandle_t ui_queue) {
     Serial.println("[UI] Init stub (PIXEL will implement)");
 }
 
-__attribute__((weak)) void ui_show_main_screen(void) {
-    Serial.println("[UI] Show main screen stub");
+__attribute__((weak)) void ui_navigate_to(ui_screen_id_t target) {
+    Serial.printf("[UI] Navigate stub to %d (PIXEL will implement)\n", target);
 }
 
-__attribute__((weak)) void ui_show_wifi_screen(void) {
-    Serial.println("[UI] Show WiFi screen stub");
-}
-
-__attribute__((weak)) void ui_show_ble_screen(void) {
-    Serial.println("[UI] Show BLE screen stub");
+__attribute__((weak)) ui_screen_id_t ui_get_current_screen(void) {
+    return UI_SCREEN_MAIN;
 }
 
 __attribute__((weak)) void ui_update_pet(uint32_t delta_ms) {

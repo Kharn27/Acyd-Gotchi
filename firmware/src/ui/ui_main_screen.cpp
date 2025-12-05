@@ -8,36 +8,23 @@
 #include "ui_screens.h"
 #include "ui_theme.h"
 #include "ui_api.h"
+#include "archi/archi_stats.h"
 #include "lvgl.h"
 
 #include <Arduino.h>
-#if defined(ARDUINO_ARCH_ESP32)
-#include <esp_heap_caps.h>
-#endif
 #include <stdio.h>
 
-// Screen references
-static lv_obj_t* g_main_screen = NULL;
-static lv_obj_t* g_active_screen = NULL;
 static lv_obj_t* g_label_uptime = NULL;
 static lv_obj_t* g_bg_img = NULL;
 static uint8_t g_bg_index = 1;
 static lv_obj_t* g_bottom_band = NULL;
 static lv_obj_t* g_bottom_button = NULL;
 static lv_obj_t* g_bottom_button_label = NULL;
+static lv_timer_t* g_uptime_timer = NULL;
+static lv_timer_t* g_wallpaper_timer = NULL;
 
-enum active_screen_state {
-  UI_SCREEN_STATE_MAIN,
-  UI_SCREEN_STATE_WIFI,
-  UI_SCREEN_STATE_BLE,
-  UI_SCREEN_STATE_SETTINGS,
-  UI_SCREEN_STATE_MONITOR,
-};
-
-static active_screen_state g_screen_state = UI_SCREEN_STATE_MAIN;
+static ui_screen_id_t g_screen_state = UI_SCREEN_MAIN;
 static lv_event_cb_t g_bottom_button_handler = NULL;
-// Référence vers le screen actuel
-static lv_obj_t* g_current_screen = NULL;
 
 // Forward declarations
 static void on_wifi_btn_click(lv_event_t* e);
@@ -50,9 +37,30 @@ static void wallpaper_timer_cb(lv_timer_t* timer);
 static void update_bottom_button(const char* label, lv_event_cb_t handler);
 static void dispatch_bottom_button(lv_event_t* e);
 static void apply_bottom_button_state(void);
+static void on_main_screen_delete(lv_event_t* e);
 
 lv_obj_t* ui_create_main_screen(void)
 {
+  archi_log_heap(" [UI] main_screen build");
+
+  if (g_bottom_band) {
+    lv_obj_del(g_bottom_band);
+    g_bottom_band = NULL;
+    g_bottom_button = NULL;
+    g_bottom_button_label = NULL;
+    g_bottom_button_handler = NULL;
+  }
+
+  if (g_uptime_timer) {
+    lv_timer_del(g_uptime_timer);
+    g_uptime_timer = NULL;
+  }
+
+  if (g_wallpaper_timer) {
+    lv_timer_del(g_wallpaper_timer);
+    g_wallpaper_timer = NULL;
+  }
+
   // Create main screen container
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
@@ -186,12 +194,11 @@ lv_obj_t* ui_create_main_screen(void)
   lv_obj_add_style(g_bottom_button_label, ui_get_style_label_normal(), 0);
   lv_obj_set_style_text_color(g_bottom_button_label, lv_color_hex(COLOR_TEXT), 0);
   update_bottom_button("Menu", on_menu_btn_click);
-  
-  g_main_screen = scr;
-  g_active_screen = scr;
 
-  lv_timer_create(update_uptime_cb, 1000, NULL);
-  lv_timer_create(wallpaper_timer_cb, 30000, NULL);
+  g_uptime_timer = lv_timer_create(update_uptime_cb, 1000, NULL);
+  g_wallpaper_timer = lv_timer_create(wallpaper_timer_cb, 30000, NULL);
+
+  lv_obj_add_event_cb(scr, on_main_screen_delete, LV_EVENT_DELETE, NULL);
 
   Serial.println("PIXEL: Main screen created");
   return scr;
@@ -230,7 +237,7 @@ static void on_back_btn_click(lv_event_t* e)
 {
   (void)e;
   Serial.println("PIXEL: Back button clicked");
-  ui_show_main_screen();
+  ui_post_event(UI_EVENT_BACK);
 }
 
 static void update_uptime_cb(lv_timer_t* timer)
@@ -266,29 +273,6 @@ static void wallpaper_timer_cb(lv_timer_t* timer)
 }
 
 // Screen management
-void ui_load_screen(lv_obj_t* new_screen)
-{
-    lv_obj_t* old_screen = g_current_screen;
-    g_current_screen = new_screen;
-
-    lv_scr_load(new_screen);
-
-    if (old_screen != NULL && old_screen != new_screen) {
-        lv_obj_del(old_screen);   // <-- ceci supprime VRAIMENT ton ancien écran
-    }
-
-    Serial.printf(
-        "[UI] After screen load/free: free=%u largest=%u\n",
-        heap_caps_get_free_size(MALLOC_CAP_8BIT),
-        heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)
-    );
-}
-
-lv_obj_t* ui_get_active_screen(void)
-{
-  return g_active_screen;
-}
-
 static void update_bottom_button(const char* label, lv_event_cb_t handler)
 {
   if (!g_bottom_button_label) return;
@@ -307,13 +291,13 @@ static void dispatch_bottom_button(lv_event_t* e)
 static void apply_bottom_button_state(void)
 {
   switch (g_screen_state) {
-    case UI_SCREEN_STATE_MAIN:
+    case UI_SCREEN_MAIN:
       update_bottom_button("Menu", on_menu_btn_click);
       break;
-    case UI_SCREEN_STATE_WIFI:
-    case UI_SCREEN_STATE_BLE:
-    case UI_SCREEN_STATE_SETTINGS:
-    case UI_SCREEN_STATE_MONITOR:
+    case UI_SCREEN_WIFI:
+    case UI_SCREEN_BLE:
+    case UI_SCREEN_SETTINGS:
+    case UI_SCREEN_MONITOR:
       update_bottom_button("Back", on_back_btn_click);
       break;
   }
@@ -329,32 +313,28 @@ void ui_bottom_button_restore(void)
   apply_bottom_button_state();
 }
 
-void ui_set_screen_state_to_main(void)
+void ui_set_bottom_bar_for_screen(ui_screen_id_t screen_id)
 {
-  g_screen_state = UI_SCREEN_STATE_MAIN;
+  g_screen_state = screen_id;
   apply_bottom_button_state();
 }
 
-void ui_set_screen_state_to_wifi(void)
+static void on_main_screen_delete(lv_event_t* e)
 {
-  g_screen_state = UI_SCREEN_STATE_WIFI;
-  apply_bottom_button_state();
-}
+  (void)e;
 
-void ui_set_screen_state_to_ble(void)
-{
-  g_screen_state = UI_SCREEN_STATE_BLE;
-  apply_bottom_button_state();
-}
+  g_bg_img = NULL;
+  g_label_uptime = NULL;
 
-void ui_set_screen_state_to_settings(void)
-{
-  g_screen_state = UI_SCREEN_STATE_SETTINGS;
-  apply_bottom_button_state();
-}
+  if (g_uptime_timer) {
+    lv_timer_del(g_uptime_timer);
+    g_uptime_timer = NULL;
+  }
 
-void ui_set_screen_state_to_monitor(void)
-{
-  g_screen_state = UI_SCREEN_STATE_MONITOR;
-  apply_bottom_button_state();
+  if (g_wallpaper_timer) {
+    lv_timer_del(g_wallpaper_timer);
+    g_wallpaper_timer = NULL;
+  }
+
+  archi_log_heap(" [UI] main_screen delete");
 }

@@ -64,7 +64,7 @@ The Acyd-Gotchi UI is built with **LVGL 8** on the ESP32-CYD 240x320 color displ
 1. User taps button on screen → LVGL callback triggered
 2. Callback posts `UI_EVENT_*` to `ui_event_queue`
 3. UI task (`ui_task.cpp`) receives event in main loop
-4. Task calls `ui_show_wifi_screen()` or similar
+4. Task appelle `ui_navigate_to(UiScreenId::WIFI)` ou équivalent
 5. Screen loads and displays
 
 Example:
@@ -77,7 +77,7 @@ Post UI_EVENT_BUTTON_WIFI to queue
   ↓
 ui_task receives event
   ↓
-ui_show_wifi_screen()
+ui_navigate_to(UiScreenId::WIFI)
   ↓
 WiFi list displayed
 ```

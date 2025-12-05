@@ -15,15 +15,15 @@ extern "C" {
 #endif
 
 // Create main screen (pet display + button bands)
-lv_obj_t* ui_create_main_screen(void);
+lv_obj_t* ui_build_main_screen(void);
 
 // Create WiFi scan results screen
-lv_obj_t* ui_create_wifi_screen(void);
+lv_obj_t* ui_build_wifi_screen(void);
 void ui_wifi_handle_ap_found(const netsec_wifi_ap_t* ap);
 void ui_wifi_handle_scan_done(void);
 
 // Create BLE scan results screen
-lv_obj_t* ui_create_ble_screen(void);
+lv_obj_t* ui_build_ble_screen(void);
 lv_obj_t* ui_ble_get_scan_button(void);
 void ui_ble_prepare_for_scan(uint32_t duration_ms);
 void ui_ble_handle_device_found(const netsec_ble_device_t* device);
@@ -38,17 +38,11 @@ void ui_ble_show_scan_request(uint32_t duration_ms);
 void ui_ble_cancel_scan(void);
 
 // Create settings screen (placeholder)
-lv_obj_t* ui_create_settings_screen(void);
+lv_obj_t* ui_build_settings_screen(void);
 
 // Create monitoring screen (system stats)
-lv_obj_t* ui_create_monitor_screen(void);
+lv_obj_t* ui_build_monitor_screen(void);
 void ui_set_screen_state_to_monitor(void);
-
-// Load a screen (switch display to given object)
-void ui_load_screen(lv_obj_t* screen);
-
-// Get current active screen
-lv_obj_t* ui_get_active_screen(void);
 
 // Update bottom button state depending on active screen
 void ui_set_screen_state_to_main(void);
@@ -57,6 +51,9 @@ void ui_set_screen_state_to_ble(void);
 void ui_set_screen_state_to_settings(void);
 void ui_bottom_button_set(const char* label, lv_event_cb_t handler);
 void ui_bottom_button_restore(void);
+void ui_teardown_main_screen(void);
+void ui_teardown_ble_screen(void);
+void ui_teardown_monitor_screen(void);
 
 #ifdef __cplusplus
 }

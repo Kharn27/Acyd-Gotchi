@@ -22,7 +22,6 @@ typedef struct {
   lv_obj_t* label;
 } wifi_ap_entry_t;
 
-static lv_obj_t* g_wifi_screen = NULL;
 static lv_obj_t* g_wifi_list = NULL;
 static lv_obj_t* g_wifi_empty_label = NULL;
 static lv_obj_t* g_wifi_status_label = NULL;
@@ -33,8 +32,13 @@ static wifi_ap_entry_t* find_entry_by_bssid(const uint8_t* bssid);
 static wifi_ap_entry_t* allocate_entry(const uint8_t* bssid);
 static void upsert_ap_row(const netsec_wifi_ap_t* ap);
 
-lv_obj_t* ui_create_wifi_screen(void)
+lv_obj_t* ui_build_wifi_screen(void)
 {
+  memset(g_wifi_entries, 0, sizeof(g_wifi_entries));
+  g_wifi_list = NULL;
+  g_wifi_empty_label = NULL;
+  g_wifi_status_label = NULL;
+
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
   lv_obj_set_size(scr, LV_HOR_RES, LV_VER_RES);
@@ -76,7 +80,6 @@ lv_obj_t* ui_create_wifi_screen(void)
   lv_obj_set_pos(g_wifi_status_label, PAD_NORMAL, LV_VER_RES - PAD_LARGE);
 
   refresh_empty_state();
-  g_wifi_screen = scr;
   Serial.println("PIXEL: WiFi screen created");
   return scr;
 }

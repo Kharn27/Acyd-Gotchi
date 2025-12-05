@@ -6,6 +6,16 @@
 // UI Module API
 // PIXEL is responsible for implementing these functions.
 
+/* Logical identifiers for screens. Navigation is expressed via this enum,
+ * never via cached lv_obj_t* pointers. */
+typedef enum {
+    UI_SCREEN_MAIN = 0,
+    UI_SCREEN_WIFI,
+    UI_SCREEN_BLE,
+    UI_SCREEN_SETTINGS,
+    UI_SCREEN_MONITOR,
+} UiScreenId;
+
 /* UI event types posted by buttons to ui_event_queue */
 typedef enum {
     UI_EVENT_NONE = 0,
@@ -22,6 +32,11 @@ typedef enum {
     UI_EVENT_BACK,           // Back or escape navigation
     UI_EVENT_UPDATE_PET,     // Periodic pet refresh
     UI_EVENT_BUTTON_MONITOR, // Top bar monitor/stats button
+    UI_EVENT_NAVIGATE_MAIN,
+    UI_EVENT_NAVIGATE_WIFI,
+    UI_EVENT_NAVIGATE_BLE,
+    UI_EVENT_NAVIGATE_SETTINGS,
+    UI_EVENT_NAVIGATE_MONITOR,
 } ui_event_t;
 
 typedef void (*ui_event_router_t)(ui_event_t event);
@@ -52,33 +67,22 @@ ui_event_router_t ui_get_event_router(void);
 bool ui_post_event(ui_event_t event);
 
 /**
- * Display the main screen (pet + button bands).
- * Called after ui_init().
+ * Request a navigation from any producer context. The navigation will be
+ * executed inside ui_task when the event is drained.
+ * @param target: logical screen identifier
  */
-void ui_show_main_screen(void);
+bool ui_request_navigation(UiScreenId target);
 
 /**
- * Display the WiFi scan results screen.
- * Called when user taps WiFi button.
+ * Synchronously navigate to a target screen from within ui_task.
+ * Destroys the current screen and builds the new one.
  */
-void ui_show_wifi_screen(void);
+void ui_navigate_to(UiScreenId target);
 
 /**
- * Display the Bluetooth scan results screen.
- * Called when user taps Bluetooth button.
+ * Get the currently displayed logical screen.
  */
-void ui_show_ble_screen(void);
-
-/**
- * Display the Settings screen.
- * Called when user taps Menu.
- */
-void ui_show_settings_screen(void);
-
-/**
- * Display the system monitoring screen.
- */
-void ui_show_monitor_screen(void);
+UiScreenId ui_get_current_screen(void);
 
 /**
  * Update the pet animation (called periodically from ui_task).

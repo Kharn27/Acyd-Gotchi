@@ -114,20 +114,23 @@ __attribute__((weak)) void ui_init(QueueHandle_t ui_queue) {
     Serial.println("[UI] Init stub (PIXEL will implement)");
 }
 
-__attribute__((weak)) void ui_show_main_screen(void) {
-    Serial.println("[UI] Show main screen stub");
-}
-
-__attribute__((weak)) void ui_show_wifi_screen(void) {
-    Serial.println("[UI] Show WiFi screen stub");
-}
-
-__attribute__((weak)) void ui_show_ble_screen(void) {
-    Serial.println("[UI] Show BLE screen stub");
-}
-
 __attribute__((weak)) void ui_update_pet(uint32_t delta_ms) {
     // Stub
+}
+
+__attribute__((weak)) bool ui_request_navigation(UiScreenId target) {
+    (void)target;
+    Serial.println("[UI] Navigation request stub");
+    return false;
+}
+
+__attribute__((weak)) void ui_navigate_to(UiScreenId target) {
+    (void)target;
+    Serial.println("[UI] Navigate stub");
+}
+
+__attribute__((weak)) UiScreenId ui_get_current_screen(void) {
+    return UI_SCREEN_MAIN;
 }
 
 // Weak NETSEC API implementations (will be overridden by NETSEC)

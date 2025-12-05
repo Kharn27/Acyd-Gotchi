@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static lv_obj_t* g_monitor_screen = NULL;
 static lv_obj_t* g_label_heap = NULL;
 static lv_obj_t* g_label_heap_min = NULL;
 static lv_obj_t* g_label_flash = NULL;
@@ -24,7 +23,7 @@ static lv_timer_t* g_refresh_timer = NULL;
 
 static void monitor_refresh_cb(lv_timer_t* timer);
 
-lv_obj_t* ui_create_monitor_screen(void)
+lv_obj_t* ui_build_monitor_screen(void)
 {
   lv_obj_t* scr = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BACKGROUND), 0);
@@ -89,7 +88,6 @@ lv_obj_t* ui_create_monitor_screen(void)
   g_refresh_timer = lv_timer_create(monitor_refresh_cb, 1000, NULL);
   monitor_refresh_cb(NULL);
 
-  g_monitor_screen = scr;
   return scr;
 }
 
@@ -142,5 +140,18 @@ static void monitor_refresh_cb(lv_timer_t* timer)
   } else {
     lv_label_set_text(g_label_psram, "PSRAM: not available");
   }
+}
+
+void ui_teardown_monitor_screen(void)
+{
+  if (g_refresh_timer) {
+    lv_timer_del(g_refresh_timer);
+    g_refresh_timer = NULL;
+  }
+  g_label_heap = NULL;
+  g_label_heap_min = NULL;
+  g_label_flash = NULL;
+  g_label_spiffs = NULL;
+  g_label_psram = NULL;
 }
 

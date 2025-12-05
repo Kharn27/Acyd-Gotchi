@@ -9,6 +9,7 @@
 #include "ui_api.h"
 #include "netsec_api.h"
 #include "netsec/netsec_core.h"
+#include "archi/archi_stats.h"
 
 // Global queue handles for inter-task communication
 QueueHandle_t ui_event_queue = NULL;
@@ -36,6 +37,7 @@ void archi_init_board(void) {
  */
 void system_init(void) {
     Serial.println("[SYSTEM] Initializing system...");
+    archi_log_heap(" [SYS] boot");
     
     // Initialize board hardware (GPIO, SPI, etc.)
     archi_init_board();
@@ -52,6 +54,7 @@ void system_init(void) {
     }
     
     Serial.println("[SYSTEM] Queues created");
+    archi_log_heap(" [SYS] queues");
     
     // Initialize UI module (passes queue handle)
     ui_init(ui_event_queue);
@@ -94,6 +97,7 @@ void system_init(void) {
     }
     
     Serial.println("[SYSTEM] System initialized successfully");
+    archi_log_heap(" [SYS] tasks");
 }
 
 // Weak task implementations (will be overridden by PIXEL and NETSEC modules)

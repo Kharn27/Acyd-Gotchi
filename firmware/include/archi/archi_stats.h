@@ -26,7 +26,30 @@ typedef struct {
  */
 bool archi_get_sys_stats(archi_sys_stats_t* out_stats);
 
+typedef struct {
+    uint32_t free_8bit;          // Free bytes in 8-bit capable heap
+    uint32_t largest_8bit;       // Largest block in 8-bit capable heap
+    uint32_t min_free_8bit;      // Minimum ever free 8-bit heap
+    uint32_t free_internal;      // Free bytes in internal RAM
+    uint32_t min_internal;       // Minimum ever free internal RAM
+    uint32_t free_psram;         // Free bytes in PSRAM (0 if unavailable)
+    uint32_t largest_psram;      // Largest block in PSRAM (0 if unavailable)
+    uint32_t min_psram;          // Minimum ever free PSRAM (0 if unavailable)
+} archi_heap_snapshot_t;
+
+/**
+ * Capture a heap snapshot (8-bit/internal + PSRAM when available).
+ * @param out_snapshot destination structure
+ * @return true on success, false on invalid args or unsupported platform
+ */
+bool archi_get_heap_snapshot(archi_heap_snapshot_t* out_snapshot);
+
+/**
+ * Convenience logger for heap status. Prints to Serial on ESP32.
+ * @param tag optional label to help identify the call site
+ */
+void archi_log_heap(const char* tag);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
-

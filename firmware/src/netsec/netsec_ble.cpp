@@ -29,16 +29,32 @@ static constexpr size_t NETSEC_BLE_MIN_HEAP_BYTES = 50 * 1024;
 
 static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t device_count, uint32_t duration_ms);
 
-static bool netsec_ble_check_heap(void) {
+static void netsec_ble_log_heap(const char* tag) {
 #if defined(ARDUINO_ARCH_ESP32)
   const size_t free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
   const size_t largest_8bit = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-  Serial.printf("[NETSEC:BLE] Heap free=%u bytes, largest=%u bytes\n",
+  Serial.printf("[NETSEC:BLE]%s free8=%uB largest8=%uB\n",
+                tag ? tag : "",
                 static_cast<unsigned>(free_8bit),
                 static_cast<unsigned>(largest_8bit));
+#else
+  (void)tag;
+#endif
+}
+
+static bool netsec_ble_check_heap(bool send_event) {
+#if defined(ARDUINO_ARCH_ESP32)
+  const size_t free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+  const size_t largest_8bit = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+  Serial.printf("[NETSEC:BLE] Heap free=%u bytes, largest=%u bytes (min required %u)\n",
+                static_cast<unsigned>(free_8bit),
+                static_cast<unsigned>(largest_8bit),
+                static_cast<unsigned>(NETSEC_BLE_MIN_HEAP_BYTES));
   if (free_8bit < NETSEC_BLE_MIN_HEAP_BYTES || largest_8bit < (NETSEC_BLE_MIN_HEAP_BYTES / 2)) {
     Serial.println("[NETSEC:BLE] Not enough heap for BLE init, aborting scan");
-    netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_ERROR_MEMORY, 0, 0);
+    if (send_event) {
+      netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_ERROR_MEMORY, 0, 0);
+    }
     return false;
   }
 #endif
@@ -79,6 +95,35 @@ static void netsec_ble_post_scan_event(netsec_result_type_t type, uint16_t devic
                 static_cast<unsigned long>(duration_ms),
                 static_cast<unsigned long>(res.data.scan_summary.timestamp_ms),
                 queued == pdTRUE ? "ok" : "queue full");
+}
+
+static void netsec_ble_abort_due_to_memory(const char* where_tag) {
+  Serial.printf("[NETSEC:BLE] Aborting BLE scan due to low memory (%s)\n",
+                where_tag ? where_tag : "unknown");
+  netsec_ble_log_heap(" OOM");
+
+#if defined(ARDUINO_ARCH_ESP32)
+  if (s_ble_scan) {
+    s_ble_scan->stop();
+    s_ble_scan->clearResults();
+  }
+#endif
+
+  if (s_ble_scan_timer) {
+    xTimerStop(s_ble_scan_timer, 0);
+    xTimerDelete(s_ble_scan_timer, 0);
+    s_ble_scan_timer = nullptr;
+  }
+
+  uint32_t elapsed_ms = s_ble_scan_start_ms ? (millis() - s_ble_scan_start_ms) : 0;
+  netsec_ble_post_scan_event(NETSEC_RES_BLE_SCAN_ERROR_MEMORY, s_ble_devices_reported, elapsed_ms);
+
+  s_ble_scan_running = false;
+  s_ble_cancel_requested = false;
+  s_ble_scan_task = nullptr;
+  s_ble_scan_start_ms = 0;
+  s_ble_device_write_idx = 0;
+  s_ble_devices_reported = 0;
 }
 
 static void netsec_ble_finalize_scan(bool canceled) {
@@ -125,10 +170,23 @@ static void netsec_ble_scan_task(void* pvParameters) {
   const TickType_t stop_tick = xTaskGetTickCount() + pdMS_TO_TICKS(duration_ms);
   bool canceled = false;
 
+  if (!netsec_ble_check_heap(false)) {
+    netsec_ble_abort_due_to_memory("scan_task_start");
+    vTaskDelete(NULL);
+    return;
+  }
+  netsec_ble_log_heap(" scan_task_start");
+
   s_ble_scan_running = true;
   Serial.printf("[NETSEC:BLE] Starting BLE scan for %lu ms\n", static_cast<unsigned long>(duration_ms));
 
   while (s_ble_scan_running && xTaskGetTickCount() < stop_tick) {
+    if (!netsec_ble_check_heap(false)) {
+      netsec_ble_abort_due_to_memory("scan_task_loop");
+      vTaskDelete(NULL);
+      return;
+    }
+
     // Slice the scan to allow cancellation checks without long blocking calls.
     TickType_t remaining_ticks = stop_tick - xTaskGetTickCount();
     uint32_t slice_ms = pdTICKS_TO_MS(remaining_ticks);
@@ -192,9 +250,10 @@ void netsec_ble_start_scan(uint32_t duration_ms)
     netsec_ble_stop_scan();
   }
 
-  if (!netsec_ble_check_heap()) {
+  if (!netsec_ble_check_heap(true)) {
     return;
   }
+  netsec_ble_log_heap(" start_scan");
 
   if (!s_ble_scan) {
     Serial.println("[NETSEC:BLE] Initializing BLE stack");
@@ -249,7 +308,7 @@ void netsec_ble_start_scan(uint32_t duration_ms)
       0);
   if (task_status != pdPASS || !s_ble_scan_task) {
     Serial.println("[NETSEC:BLE] Failed to create scan task");
-    netsec_ble_finalize_scan(true);
+    netsec_ble_abort_due_to_memory("task_create");
   } else {
     Serial.println("[NETSEC:BLE] BLE scan task created");
   }
@@ -276,6 +335,8 @@ void netsec_ble_stop_scan(void)
     Serial.println("[NETSEC:BLE] Cancel signal sent to scan task");
   }
   // Cleanup will be performed by the scan task to avoid race conditions.
+#else
+  Serial.println("[NETSEC:BLE] BLE stop (mock platform)");
 #endif
 }
 

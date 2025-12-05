@@ -8,6 +8,7 @@
 #include "ui_screens.h"
 #include "ui_theme.h"
 #include "ui_api.h"
+#include "archi/archi_stats.h"
 #include "lvgl.h"
 
 #include <Arduino.h>
@@ -40,6 +41,8 @@ static void on_main_screen_delete(lv_event_t* e);
 
 lv_obj_t* ui_create_main_screen(void)
 {
+  archi_log_heap(" [UI] main_screen build");
+
   if (g_bottom_band) {
     lv_obj_del(g_bottom_band);
     g_bottom_band = NULL;
@@ -332,4 +335,6 @@ static void on_main_screen_delete(lv_event_t* e)
     lv_timer_del(g_wallpaper_timer);
     g_wallpaper_timer = NULL;
   }
+
+  archi_log_heap(" [UI] main_screen delete");
 }

@@ -11,6 +11,7 @@
 #include "ui_screens.h"
 #include "netsec_api.h"
 #include "lvgl_port.h"
+#include "archi/archi_stats.h"
 
 #include "lvgl.h"
 #include <freertos/FreeRTOS.h>
@@ -46,9 +47,11 @@ void ui_task(void * pvParameters)
   
   Serial.printf("UI Task started on core %d, priority %d\n",
                 xPortGetCoreID(), uxTaskPriorityGet(NULL));
+  archi_log_heap(" [UI] task start");
   
   // Initialize LVGL and drivers
   lvgl_port_init();
+  archi_log_heap(" [UI] after lvgl_port_init");
 
   // Show main screen
   ui_navigate_to(UI_SCREEN_MAIN);
